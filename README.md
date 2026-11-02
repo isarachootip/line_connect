@@ -4,30 +4,35 @@
 
 ## โครงสร้างโปรเจกต์ (Monorepo Workspaces)
 
-- `packages/shared` — ประเภทข้อมูลกลาง (Enums, Standard API Response Contracts)
-- `apps/backend` — ระบบ Backend API Gateway/BFF, Core Security (AES-256-GCM + HMAC Blind Index, PII Redactor), Prisma ORM
-- `apps/liff-frontend` — ระบบ LIFF Frontend สำหรับลูกค้าไทวัสดุ (TWD) และ BnB Home (BNB)
-- `apps/admin` — ระบบ Admin Portal สำหรับจัดการแคมเปญ Mission, คูปอง, Batch Export และ Audit Log
+- `apps/api` — ระบบ Backend (NestJS) แยก 8 โมดูลตามส่วนประกอบ (`gateway`, `auth`, `member`, `mission`, `coupon`, `integration`, `admin`, `audit`), Endpoint `GET /health` เช็ก DB + Redis, และ Structured JSON Logger ที่ Mask เบอร์โทร อีเมล และ Token อัตโนมัติ
+- `apps/liff` — ระบบ LIFF Frontend (React + Vite + `@line/liff` SDK) หน้าเริ่มต้น Hello ที่เรียก `liff.init()`
+- `packages/shared` — ประเภทข้อมูล (Type) และ DTO กลางที่ใช้ร่วมกันระหว่าง Backend และ Frontend
 
-## วิธีเริ่มต้นใช้งาน (Quick Start)
+## วิธีรันระบบแบบ Local
 
-1. คัดลอกไฟล์ `.env.example` เป็น `.env` และตั้งค่าตัวแปรสภาพแวดล้อม:
-   ```bash
-   cp .env.example .env
-   ```
-2. รันบริการฐานข้อมูล PostgreSQL 16 และ Redis 7 ด้วย Docker Compose:
-   ```bash
-   docker compose up -d
-   ```
-3. ติดตั้ง Dependencies และสร้าง Prisma Client:
-   ```bash
-   npm install
-   npm run build --workspace=@line-connect/shared
-   npm run prisma:generate --workspace=@line-connect/backend
-   ```
-4. รันการตรวจสอบคุณภาพโค้ดและ Unit Tests ทั้งระบบ:
-   ```bash
-   npm run lint
-   npm run typecheck
-   npm test
-   ```
+### วิธีที่ 1: รันผ่าน Docker Compose ทั้งระบบ (`api`, `postgres`, `redis`)
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+ตรวจสอบสถานะระบบได้ที่ `http://localhost:3000/health`
+
+### วิธีที่ 2: รัน DB + Redis บน Docker และรันโค้ดแบบ Hot-Reload บนเครื่อง
+```bash
+# 1. คัดลอกไฟล์ตั้งค่าและเปิดใช้งานเฉพาะ postgres และ redis
+cp .env.example .env
+docker compose up -d postgres redis
+
+# 2. ติดตั้งแพ็กเกจและสร้าง Prisma Client
+npm install
+npm run build --workspace=@line-connect/shared
+npm run prisma:generate --workspace=@line-connect/api
+
+# 3. รันตรวจสอบคุณภาพโค้ด เทสต์ และ Build ทั้ง Monorepo
+npm run lint
+npm test
+npm run build
+
+# 4. รันหน้าเว็บ LIFF (พอร์ต 5173)
+npm run dev --workspace=@line-connect/liff
+```

@@ -1,15 +1,15 @@
-# ไปป์ไลน์ตรวจสอบคุณภาพโค้ดอัตโนมัติ (Lint, Typecheck, Prisma Validate และ Unit Test)
+# ไปป์ไลน์ตรวจสอบคุณภาพโค้ดอัตโนมัติ (Lint, Test, Build) ทุก Pull Request และการ Push
 name: Line Connect CI
 
 on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: ['*']
 
 jobs:
   verify:
-    name: Lint, Typecheck & Unit Tests
+    name: Lint, Test & Build
     runs-on: ubuntu-latest
 
     env:
@@ -28,17 +28,20 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build Shared Package & Generate Prisma Client
+      - name: Validate Prisma Schema & Generate Client
         run: |
           npm run build --workspace=@line-connect/shared
-          npm run prisma:validate --workspace=@line-connect/backend
-          npm run prisma:generate --workspace=@line-connect/backend
+          npm run prisma:validate --workspace=@line-connect/api
+          npm run prisma:generate --workspace=@line-connect/api
 
-      - name: Run ESLint (Zero Any Policy)
+      - name: Run ESLint
         run: npm run lint
 
       - name: Run TypeScript Typecheck
         run: npm run typecheck
 
-      - name: Run Unit Tests Across All Workspaces
+      - name: Run Unit Tests
         run: npm test
+
+      - name: Build All Workspaces (shared, api, liff)
+        run: npm run build

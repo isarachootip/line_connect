@@ -1,6 +1,4 @@
-# บริการโครงสร้างพื้นฐานสำหรับพัฒนาและทดสอบระบบ Line Connect (PostgreSQL 16 + Redis 7)
-version: '3.9'
-
+# บริการโครงสร้างพื้นฐานสำหรับรันระบบ Line Connect บนเครื่อง Local (api, postgres, redis)
 services:
   postgres:
     image: postgres:16-alpine
@@ -33,6 +31,29 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: line_connect_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${PORT:-3000}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lineconnect}:${POSTGRES_PASSWORD:-lineconnect_dev_pwd}@postgres:5432/${POSTGRES_DB:-line_connect_db}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - '${PORT:-3000}:3000'
 
 volumes:
   postgres_data:

@@ -1,3 +1,18 @@
+import { AppEnvironment } from '../enums/brand.enum';
+
+// สถานะการเชื่อมต่อของบริการภายนอกหรือฐานข้อมูลย่อย (DB / Redis)
+export type DependencyState = 'up' | 'down';
+
+// DTO สำหรับผลลัพธ์ของ Endpoint GET /health ที่เช็กทั้ง PostgreSQL และ Redis
+export interface HealthStatusDto {
+  readonly status: 'up' | 'degraded';
+  readonly environment: AppEnvironment;
+  readonly dependencies: {
+    readonly database: DependencyState;
+    readonly redis: DependencyState;
+  };
+}
+
 // โครงสร้างรายละเอียดข้อผิดพลาดมาตรฐานสำหรับ API Response
 export interface ApiErrorDetail {
   readonly code: string;

@@ -1,0 +1,5 @@
+import { Module } from '@nestjs/common';
+
+// โมดูล Monitoring & Audit Log สำหรับบันทึกประวัติการใช้งานระบบโดยปราศจากข้อมูลส่วนบุคคล (PII-Free)
+@Module({})
+export class AuditModule {}

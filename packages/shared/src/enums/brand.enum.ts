@@ -1,3 +1,10 @@
+// สภาพแวดล้อมการทำงานของระบบ (แยก dev / staging / prod)
+export enum AppEnvironment {
+  DEV = 'dev',
+  STAGING = 'staging',
+  PROD = 'prod',
+}
+
 // รหัสแบรนด์ภายใต้ระบบ Line Connect (ไทวัสดุ และ BnB Home)
 export enum BrandCode {
   TWD = 'TWD',
