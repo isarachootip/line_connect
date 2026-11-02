@@ -2,8 +2,10 @@
 export {
   AppEnvironment,
   BrandCode,
+  LineLinkStatus,
   ConsentType,
-  MemberLinkStatus,
+  CouponSource,
+  CouponWalletStatus,
   isValidBrandCode,
 } from './enums/brand.enum';
 

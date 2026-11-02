@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
-import { PrismaService } from './common/prisma/prisma.service';
+import { PrismaModule } from './common/prisma/prisma.module';
+import { CryptoModule } from './common/crypto/crypto.module';
 import { RedisService } from './common/redis/redis.service';
 import { StructuredJsonLogger } from './common/logger/structured-json.logger';
 import { GatewayModule } from './modules/gateway/gateway.module';
@@ -16,6 +17,8 @@ import { AuditModule } from './modules/audit/audit.module';
 // โมดูลหลักของระบบ Line Connect API ที่รวมทุกส่วนประกอบย่อยตามสถาปัตยกรรม
 @Module({
   imports: [
+    PrismaModule,
+    CryptoModule,
     GatewayModule,
     AuthModule,
     MemberModule,
@@ -27,7 +30,6 @@ import { AuditModule } from './modules/audit/audit.module';
   ],
   controllers: [HealthController],
   providers: [
-    PrismaService,
     {
       provide: RedisService,
       useFactory: () =>
@@ -43,6 +45,6 @@ import { AuditModule } from './modules/audit/audit.module';
       useFactory: () => new StructuredJsonLogger(),
     },
   ],
-  exports: [PrismaService, RedisService, StructuredJsonLogger],
+  exports: [RedisService, StructuredJsonLogger],
 })
 export class AppModule {}

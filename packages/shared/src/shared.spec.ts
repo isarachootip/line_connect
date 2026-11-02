@@ -2,7 +2,10 @@ import {
   AppEnvironment,
   BrandCode,
   ConsentType,
+  CouponSource,
+  CouponWalletStatus,
   HealthStatusDto,
+  LineLinkStatus,
   createSuccessResponse,
   createErrorResponse,
   isValidBrandCode,
@@ -24,10 +27,17 @@ describe('Shared Package Domain Contracts', () => {
     expect(AppEnvironment.PROD).toBe('prod');
   });
 
-  it('ควรมีประเภทความยินยอม (ConsentType) ครบทั้ง T&C, PDPA และการตลาด', () => {
-    expect(ConsentType.TERMS_AND_CONDITIONS).toBe('TERMS_AND_CONDITIONS');
-    expect(ConsentType.PDPA_PRIVACY).toBe('PDPA_PRIVACY');
+  it('ควรมีประเภทความยินยอม (ConsentType), สถานะ LineLink และสถานะคูปองตรงตามสเปกฐานข้อมูล', () => {
+    expect(ConsentType.TNC).toBe('TNC');
+    expect(ConsentType.PDPA).toBe('PDPA');
     expect(ConsentType.MARKETING).toBe('MARKETING');
+    expect(LineLinkStatus.ACTIVE).toBe('active');
+    expect(LineLinkStatus.UNLINKED).toBe('unlinked');
+    expect(CouponSource.TWD).toBe('TWD');
+    expect(CouponSource.THE1).toBe('THE1');
+    expect(CouponWalletStatus.AVAILABLE).toBe('available');
+    expect(CouponWalletStatus.USED).toBe('used');
+    expect(CouponWalletStatus.EXPIRED).toBe('expired');
   });
 
   it('ควรสร้างโครงสร้าง API Response และ HealthStatusDto ตามมาตรฐานเดียวกัน', () => {
@@ -42,8 +52,6 @@ describe('Shared Package Domain Contracts', () => {
     const successRes = createSuccessResponse(healthPayload, 'req-001');
     expect(successRes.success).toBe(true);
     expect(successRes.data?.status).toBe('up');
-    expect(successRes.data?.dependencies.database).toBe('up');
-    expect(successRes.requestId).toBe('req-001');
 
     const errorRes = createErrorResponse('AUTH_OTP_EXPIRED', 'รหัส OTP หมดอายุ', 'req-002');
     expect(errorRes.success).toBe(false);

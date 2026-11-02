@@ -1,0 +1,2 @@
+# ล็อกชนิดของฐานข้อมูลสำหรับ Prisma Migrate
+provider = "postgresql"

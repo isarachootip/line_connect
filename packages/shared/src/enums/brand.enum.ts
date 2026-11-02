@@ -11,18 +11,30 @@ export enum BrandCode {
   BNB = 'BNB',
 }
 
-// ประเภทเอกสารความยินยอม (Consent) ที่ต้องจัดเก็บตามกฎหมาย PDPA และข้อกำหนดบริการ
+// สถานะการผูกบัญชีในตาราง line_link (active | unlinked)
+export enum LineLinkStatus {
+  ACTIVE = 'active',
+  UNLINKED = 'unlinked',
+}
+
+// ประเภทความยินยอมในตาราง consent (TNC | PDPA | MARKETING)
 export enum ConsentType {
-  TERMS_AND_CONDITIONS = 'TERMS_AND_CONDITIONS',
-  PDPA_PRIVACY = 'PDPA_PRIVACY',
+  TNC = 'TNC',
+  PDPA = 'PDPA',
   MARKETING = 'MARKETING',
 }
 
-// สถานะการผูกบัญชีระหว่าง LINE UID กับ The 1 Member ID
-export enum MemberLinkStatus {
-  ACTIVE = 'ACTIVE',
-  UNLINKED = 'UNLINKED',
-  SUSPENDED = 'SUSPENDED',
+// แหล่งที่มาของคูปองในตาราง coupon (TWD | THE1)
+export enum CouponSource {
+  TWD = 'TWD',
+  THE1 = 'THE1',
+}
+
+// สถานะคูปองของลูกค้าในตาราง coupon_wallet (available | used | expired)
+export enum CouponWalletStatus {
+  AVAILABLE = 'available',
+  USED = 'used',
+  EXPIRED = 'expired',
 }
 
 // ตรวจสอบว่ารหัสที่รับเข้ามาเป็นแบรนด์ที่รองรับในระบบหรือไม่

@@ -1,4 +1,4 @@
-// โครงสร้างฐานข้อมูลหลักของระบบ Line Connect (ไทวัสดุ และ BnB Home)
+// โครงสร้างฐานข้อมูลหลักของระบบ Line Connect (ไทวัสดุ และ BnB Home) ครบ 11 ตารางตามสเปก
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,74 +8,186 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ตารางผูกความสัมพันธ์ระหว่าง LINE UID กับ The 1 Member ID (เก็บข้อมูลส่วนบุคคลและ Token แบบเข้ารหัส)
-model MemberLink {
-  id                        String          @id @default(uuid())
-  lineUid                   String          @unique @map("line_uid")
-  the1MemberIdHash          String          @unique @map("the1_member_id_hash")
-  the1MemberIdEncrypted     String          @map("the1_member_id_encrypted")
-  phoneHash                 String?         @map("phone_hash")
-  phoneEncrypted            String?         @map("phone_encrypted")
-  emailHash                 String?         @map("email_hash")
-  emailEncrypted            String?         @map("email_encrypted")
-  the1AccessTokenEncrypted  String?         @map("the1_access_token_encrypted")
-  the1RefreshTokenEncrypted String?         @map("the1_refresh_token_encrypted")
-  tokenExpiresAt            DateTime?       @map("token_expires_at")
-  registeredBrand           String          @map("registered_brand")
-  status                    String          @default("ACTIVE")
-  linkedAt                  DateTime        @default(now()) @map("linked_at")
-  updatedAt                 DateTime        @updatedAt @map("updated_at")
-  consents                  MemberConsent[]
-
-  @@index([phoneHash])
-  @@index([emailHash])
-  @@map("member_links")
+enum Brand {
+  TWD
+  BNB
 }
 
-// ตารางเก็บเวอร์ชันของข้อกำหนดและเงื่อนไข (T&C) และนโยบายคุ้มครองข้อมูลส่วนบุคคล (PDPA)
-model ConsentVersion {
-  id             String          @id @default(uuid())
-  consentType    String          @map("consent_type")
-  version        String
-  title          String
-  contentHash    String          @map("content_hash")
-  isActive       Boolean         @default(true) @map("is_active")
-  publishedAt    DateTime        @default(now()) @map("published_at")
-  memberConsents MemberConsent[]
-
-  @@unique([consentType, version])
-  @@map("consent_versions")
+enum LineLinkStatus {
+  active
+  unlinked
 }
 
-// ตารางบันทึกประวัติการยินยอมของลูกค้าแต่ละคนในทุกเวอร์ชัน (ห้ามลบเพื่อใช้ตรวจสอบตามกฎหมาย PDPA)
-model MemberConsent {
-  id               String         @id @default(uuid())
-  memberLinkId     String         @map("member_link_id")
-  consentVersionId String         @map("consent_version_id")
-  accepted         Boolean
-  channelBrand     String         @map("channel_brand")
-  ipAddressHash    String?        @map("ip_address_hash")
-  consentedAt      DateTime       @default(now()) @map("consented_at")
-  memberLink       MemberLink     @relation(fields: [memberLinkId], references: [id], onDelete: Restrict)
-  consentVersion   ConsentVersion @relation(fields: [consentVersionId], references: [id], onDelete: Restrict)
-
-  @@index([memberLinkId, consentVersionId])
-  @@map("member_consents")
+enum ConsentType {
+  TNC
+  PDPA
+  MARKETING
 }
 
-// ตารางบันทึกประวัติการใช้งานและเหตุการณ์สำคัญ (Audit Log) โดยปราศจากข้อมูลส่วนบุคคล (PII-Free)
+enum CouponSource {
+  TWD
+  THE1
+}
+
+enum CouponWalletStatus {
+  available
+  used
+  expired
+}
+
+// 1. ตารางผูกบัญชี LINE UID กับรหัสสมาชิก The 1 แยกตามแบรนด์ (unique: line_uid + brand)
+model LineLink {
+  id       String         @id @default(uuid())
+  lineUid  String         @map("line_uid")
+  memberId String         @map("member_id")
+  brand    Brand
+  linkedAt DateTime       @default(now()) @map("linked_at")
+  status   LineLinkStatus @default(active)
+
+  @@unique([lineUid, brand])
+  @@index([memberId])
+  @@index([status])
+  @@map("line_link")
+}
+
+// 2. ตารางประวัติความยินยอม (Append-only: ห้าม update ทับ ให้ insert แถวใหม่ทุกครั้ง)
+model Consent {
+  id        String      @id @default(uuid())
+  memberId  String      @map("member_id")
+  type      ConsentType
+  version   String
+  grantedAt DateTime?   @map("granted_at")
+  revokedAt DateTime?   @map("revoked_at")
+
+  @@index([memberId, type, version])
+  @@index([memberId, grantedAt])
+  @@map("consent")
+}
+
+// 3. ตารางเก็บ Token ของ The 1 (access_token และ refresh_token เข้ารหัสระดับ column ด้วย key จาก env)
+model The1Token {
+  memberId     String   @id @map("member_id")
+  accessToken  String   @map("access_token")
+  refreshToken String   @map("refresh_token")
+  expiresAt    DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("the1_token")
+}
+
+// 4. ตารางแคชข้อมูลโปรไฟล์สมาชิกจาก The 1 (first_name และ last_name เข้ารหัสตอนจัดเก็บ)
+model MemberProfile {
+  memberId    String   @id @map("member_id")
+  firstName   String   @map("first_name")
+  lastName    String   @map("last_name")
+  tier        String
+  points      Int
+  refreshedAt DateTime @default(now()) @map("refreshed_at")
+
+  @@index([tier])
+  @@index([refreshedAt])
+  @@map("member_profile")
+}
+
+// 5. ตารางธุรกรรมยอดใช้จ่ายรายลูกค้าจากไทวัสดุ
+model SpendingTxn {
+  txnId    String   @id @unique @map("txn_id")
+  memberId String   @map("member_id")
+  store    String
+  amount   Decimal  @db.Decimal(12, 2)
+  category String
+  sku      String
+  txnAt    DateTime @map("txn_at")
+
+  @@index([memberId, txnAt])
+  @@index([store])
+  @@index([category])
+  @@map("spending_txn")
+}
+
+// 6. ตารางแคมเปญภารกิจสะสมยอดซื้อ (Mission)
+model Mission {
+  missionId  String            @id @default(uuid()) @map("mission_id")
+  name       String
+  rule       Json              @db.JsonB
+  target     Decimal           @db.Decimal(12, 2)
+  startAt    DateTime          @map("start_at")
+  endAt      DateTime          @map("end_at")
+  reward     Json              @db.JsonB
+  status     String
+  progresses MissionProgress[]
+
+  @@index([status, startAt, endAt])
+  @@map("mission")
+}
+
+// 7. ตารางความคืบหน้าภารกิจของสมาชิกรายคน (unique: member_id + mission_id)
+model MissionProgress {
+  id          String    @id @default(uuid())
+  memberId    String    @map("member_id")
+  missionId   String    @map("mission_id")
+  progress    Decimal   @db.Decimal(12, 2)
+  completedAt DateTime? @map("completed_at")
+  mission     Mission   @relation(fields: [missionId], references: [missionId], onDelete: Restrict)
+
+  @@unique([memberId, missionId])
+  @@index([missionId])
+  @@index([memberId])
+  @@map("mission_progress")
+}
+
+// 8. ตารางข้อมูลคูปองส่วนลดและสิทธิพิเศษ (จากไทวัสดุ หรือ The 1)
+model Coupon {
+  couponId    String         @id @default(uuid()) @map("coupon_id")
+  code        String         @unique
+  source      CouponSource
+  type        String
+  value       Decimal        @db.Decimal(12, 2)
+  maxDiscount Decimal?       @map("max_discount") @db.Decimal(12, 2)
+  validFrom   DateTime       @map("valid_from")
+  validTo     DateTime       @map("valid_to")
+  wallets     CouponWallet[]
+
+  @@index([source, validFrom, validTo])
+  @@map("coupon")
+}
+
+// 9. ตารางกระเป๋าคูปองของสมาชิกแต่ละราย
+model CouponWallet {
+  id       String             @id @default(uuid())
+  memberId String             @map("member_id")
+  couponId String             @map("coupon_id")
+  status   CouponWalletStatus @default(available)
+  usedAt   DateTime?          @map("used_at")
+  coupon   Coupon             @relation(fields: [couponId], references: [couponId], onDelete: Restrict)
+
+  @@index([memberId, status])
+  @@index([couponId])
+  @@map("coupon_wallet")
+}
+
+// 10. ตารางบันทึกการส่งไฟล์ Batch กลุ่มเป้าหมายกลับไทวัสดุ
+model TargetBatch {
+  batchId  String    @id @default(uuid()) @map("batch_id")
+  segment  String
+  filePath String    @map("file_path")
+  rowCount Int       @map("row_count")
+  sentAt   DateTime? @map("sent_at")
+
+  @@index([segment, sentAt])
+  @@map("target_batch")
+}
+
+// 11. ตารางบันทึกประวัติการใช้งานและเหตุการณ์สำคัญ (Audit Log)
 model AuditLog {
-  id           String   @id @default(uuid())
-  actorType    String   @map("actor_type")
-  actorId      String   @map("actor_id")
-  action       String
-  resourceType String   @map("resource_type")
-  resourceId   String?  @map("resource_id")
-  brand        String?
-  metadataJson String   @map("metadata_json")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  actor     String
+  action    String
+  target    String
+  metadata  Json     @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at")
 
-  @@index([actorId, createdAt])
+  @@index([actor, createdAt])
   @@index([action, createdAt])
-  @@map("audit_logs")
+  @@map("audit_log")
 }

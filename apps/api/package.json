@@ -9,7 +9,13 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "jest --config jest.config.cjs",
     "prisma:validate": "prisma validate",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "tsc -p tsconfig.json && node dist/common/prisma/seed-cli.js"
+  },
+  "prisma": {
+    "seed": "node dist/common/prisma/seed-cli.js"
   },
   "dependencies": {
     "@line-connect/shared": "*",
