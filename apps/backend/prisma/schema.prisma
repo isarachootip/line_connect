@@ -1,0 +1,81 @@
+// โครงสร้างฐานข้อมูลหลักของระบบ Line Connect (ไทวัสดุ และ BnB Home)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ตารางผูกความสัมพันธ์ระหว่าง LINE UID กับ The 1 Member ID (เก็บข้อมูลส่วนบุคคลและ Token แบบเข้ารหัส)
+model MemberLink {
+  id                        String          @id @default(uuid())
+  lineUid                   String          @unique @map("line_uid")
+  the1MemberIdHash          String          @unique @map("the1_member_id_hash")
+  the1MemberIdEncrypted     String          @map("the1_member_id_encrypted")
+  phoneHash                 String?         @map("phone_hash")
+  phoneEncrypted            String?         @map("phone_encrypted")
+  emailHash                 String?         @map("email_hash")
+  emailEncrypted            String?         @map("email_encrypted")
+  the1AccessTokenEncrypted  String?         @map("the1_access_token_encrypted")
+  the1RefreshTokenEncrypted String?         @map("the1_refresh_token_encrypted")
+  tokenExpiresAt            DateTime?       @map("token_expires_at")
+  registeredBrand           String          @map("registered_brand")
+  status                    String          @default("ACTIVE")
+  linkedAt                  DateTime        @default(now()) @map("linked_at")
+  updatedAt                 DateTime        @updatedAt @map("updated_at")
+  consents                  MemberConsent[]
+
+  @@index([phoneHash])
+  @@index([emailHash])
+  @@map("member_links")
+}
+
+// ตารางเก็บเวอร์ชันของข้อกำหนดและเงื่อนไข (T&C) และนโยบายคุ้มครองข้อมูลส่วนบุคคล (PDPA)
+model ConsentVersion {
+  id             String          @id @default(uuid())
+  consentType    String          @map("consent_type")
+  version        String
+  title          String
+  contentHash    String          @map("content_hash")
+  isActive       Boolean         @default(true) @map("is_active")
+  publishedAt    DateTime        @default(now()) @map("published_at")
+  memberConsents MemberConsent[]
+
+  @@unique([consentType, version])
+  @@map("consent_versions")
+}
+
+// ตารางบันทึกประวัติการยินยอมของลูกค้าแต่ละคนในทุกเวอร์ชัน (ห้ามลบเพื่อใช้ตรวจสอบตามกฎหมาย PDPA)
+model MemberConsent {
+  id               String         @id @default(uuid())
+  memberLinkId     String         @map("member_link_id")
+  consentVersionId String         @map("consent_version_id")
+  accepted         Boolean
+  channelBrand     String         @map("channel_brand")
+  ipAddressHash    String?        @map("ip_address_hash")
+  consentedAt      DateTime       @default(now()) @map("consented_at")
+  memberLink       MemberLink     @relation(fields: [memberLinkId], references: [id], onDelete: Restrict)
+  consentVersion   ConsentVersion @relation(fields: [consentVersionId], references: [id], onDelete: Restrict)
+
+  @@index([memberLinkId, consentVersionId])
+  @@map("member_consents")
+}
+
+// ตารางบันทึกประวัติการใช้งานและเหตุการณ์สำคัญ (Audit Log) โดยปราศจากข้อมูลส่วนบุคคล (PII-Free)
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorType    String   @map("actor_type")
+  actorId      String   @map("actor_id")
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  brand        String?
+  metadataJson String   @map("metadata_json")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}

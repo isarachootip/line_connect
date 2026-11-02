@@ -1,0 +1,24 @@
+# ไฟล์ระบบและ Dependencies
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+
+# ไฟล์ Environment และความลับ (ห้าม Commit ขึ้น Git โดยเด็ดขาด)
+.env
+.env.local
+.env.*.local
+
+# ไฟล์ Log และ OS
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+
+# ไฟล์ IDE
+.vscode/
+.idea/
+*.swp
+*.swo
