@@ -38,3 +38,10 @@ export {
   type MemberMissionDetailDto,
   type MemberMissionListResponseDto,
 } from './types/mission.type';
+
+export {
+  type MemberCouponItemDto,
+  type MemberCouponListResponseDto,
+  type UseCouponResponseDto,
+} from './types/coupon.type';
+
