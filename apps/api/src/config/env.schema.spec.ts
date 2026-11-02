@@ -1,8 +1,8 @@
 import { AppEnvironment } from '@line-connect/shared';
 import { validateEnv } from './env.schema';
 
-// ชุดทดสอบการตรวจสอบตัวแปรสภาพแวดล้อมแยกตาม dev / staging / prod
-describe('Environment Schema Validation (dev / staging / prod)', () => {
+// ชุดทดสอบการตรวจสอบตัวแปรสภาพแวดล้อมแยกตาม dev / staging / prod และการตั้งค่า The 1 API
+describe('Environment Schema Validation (dev / staging / prod & The 1 Config)', () => {
   const validBaseEnv: Record<string, string> = {
     APP_ENV: 'dev',
     NODE_ENV: 'development',
@@ -16,22 +16,31 @@ describe('Environment Schema Validation (dev / staging / prod)', () => {
     JWT_SECRET: 'super_secret_jwt_key_at_least_32_characters_long',
     LINE_LIFF_CHANNEL_ID_TWD: '1234567890',
     LINE_LIFF_CHANNEL_ID_BNB: '0987654321',
-    THE1_API_USE_MOCK: 'true',
-    THE1_API_BASE_URL: 'https://api-mock.the1.co.th',
+    THE1_MOCK: 'true',
+    THE1_BASE_URL: 'https://api-mock.the1.co.th',
     THE1_CLIENT_ID: 'mock_client_id',
     THE1_CLIENT_SECRET: 'mock_client_secret',
+    THE1_TIMEOUT_MS: '3000',
     TWD_SPENDING_API_USE_MOCK: 'true',
     TWD_SPENDING_API_BASE_URL: 'https://api-mock.thaiwatsadu.com',
     TWD_SPENDING_API_KEY: 'mock_spending_key',
     TWD_BATCH_EXPORT_DIR: './exports/batch',
   };
 
-  it('ควรรองรับการตั้งค่า APP_ENV ทั้ง dev, staging และ prod ได้อย่างถูกต้อง', () => {
+  it('ควรรองรับการตั้งค่า APP_ENV ทั้ง dev, staging และ prod รวมถึงตัวแปร THE1_* ได้ถูกต้อง', () => {
     const devConfig = validateEnv({ ...validBaseEnv, APP_ENV: 'dev' });
     expect(devConfig.APP_ENV).toBe(AppEnvironment.DEV);
+    expect(devConfig.THE1_MOCK).toBe(true);
+    expect(devConfig.THE1_BASE_URL).toBe('https://api-mock.the1.co.th');
+    expect(devConfig.THE1_TIMEOUT_MS).toBe(3000);
 
-    const stagingConfig = validateEnv({ ...validBaseEnv, APP_ENV: 'staging' });
+    const stagingConfig = validateEnv({
+      ...validBaseEnv,
+      APP_ENV: 'staging',
+      THE1_MOCK: 'false',
+    });
     expect(stagingConfig.APP_ENV).toBe(AppEnvironment.STAGING);
+    expect(stagingConfig.THE1_MOCK).toBe(false);
 
     const prodConfig = validateEnv({
       ...validBaseEnv,

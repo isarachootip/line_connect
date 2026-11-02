@@ -34,13 +34,14 @@ export const envSchema = z.object({
     .min(32, 'JWT_SECRET ต้องมีความยาวอย่างน้อย 32 ตัวอักษร'),
   LINE_LIFF_CHANNEL_ID_TWD: z.string().min(1),
   LINE_LIFF_CHANNEL_ID_BNB: z.string().min(1),
-  THE1_API_USE_MOCK: z
+  THE1_MOCK: z
     .string()
     .default('true')
     .transform((val) => val.toLowerCase() === 'true'),
-  THE1_API_BASE_URL: z.string().url(),
-  THE1_CLIENT_ID: z.string().min(1),
-  THE1_CLIENT_SECRET: z.string().min(1),
+  THE1_BASE_URL: z.string().url('ต้องระบุ THE1_BASE_URL เป็น URL ที่ถูกต้อง'),
+  THE1_CLIENT_ID: z.string().min(1, 'ต้องระบุ THE1_CLIENT_ID'),
+  THE1_CLIENT_SECRET: z.string().min(1, 'ต้องระบุ THE1_CLIENT_SECRET'),
+  THE1_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),
   TWD_SPENDING_API_USE_MOCK: z
     .string()
     .default('true')
@@ -56,7 +57,12 @@ export type AppEnvConfig = z.infer<typeof envSchema>;
 export function validateEnv(
   rawEnv: Record<string, string | undefined>,
 ): AppEnvConfig {
-  const parsed = envSchema.safeParse(rawEnv);
+  const normalizedEnv: Record<string, string | undefined> = {
+    ...rawEnv,
+    THE1_MOCK: rawEnv.THE1_MOCK ?? rawEnv.THE1_API_USE_MOCK,
+    THE1_BASE_URL: rawEnv.THE1_BASE_URL ?? rawEnv.THE1_API_BASE_URL,
+  };
+  const parsed = envSchema.safeParse(normalizedEnv);
   if (!parsed.success) {
     const issues = parsed.error.issues
       .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
