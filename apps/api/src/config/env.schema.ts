@@ -32,8 +32,34 @@ export const envSchema = z.object({
   JWT_SECRET: z
     .string()
     .min(32, 'JWT_SECRET ต้องมีความยาวอย่างน้อย 32 ตัวอักษร'),
+  JWT_ACCESS_EXPIRES_SECONDS: z.coerce.number().int().positive().default(900),
+  JWT_REFRESH_EXPIRES_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(604800),
+  LINE_CHANNEL_ID: z.string().min(1).default('default_line_channel_id'),
   LINE_LIFF_CHANNEL_ID_TWD: z.string().min(1),
   LINE_LIFF_CHANNEL_ID_BNB: z.string().min(1),
+  LINE_VERIFY_MOCK: z
+    .string()
+    .default('true')
+    .transform((val) => val.toLowerCase() === 'true'),
+  LINE_VERIFY_URL: z
+    .string()
+    .url('ต้องระบุ LINE_VERIFY_URL เป็น URL ที่ถูกต้อง')
+    .default('https://api.line.me/oauth2/v2.1/verify'),
+  THE1_PASSPORT_URL: z
+    .string()
+    .url('ต้องระบุ THE1_PASSPORT_URL เป็น URL ที่ถูกต้อง')
+    .default('https://passport-mock.the1.co.th/authorize'),
+  AUTH_RATE_LIMIT_PER_IP: z.coerce.number().int().positive().default(20),
+  AUTH_RATE_LIMIT_PER_LINE_UID: z.coerce.number().int().positive().default(10),
+  AUTH_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(60),
   THE1_MOCK: z
     .string()
     .default('true')
@@ -59,6 +85,10 @@ export function validateEnv(
 ): AppEnvConfig {
   const normalizedEnv: Record<string, string | undefined> = {
     ...rawEnv,
+    LINE_CHANNEL_ID:
+      rawEnv.LINE_CHANNEL_ID ??
+      rawEnv.LINE_LIFF_CHANNEL_ID_TWD ??
+      'default_line_channel_id',
     THE1_MOCK: rawEnv.THE1_MOCK ?? rawEnv.THE1_API_USE_MOCK,
     THE1_BASE_URL: rawEnv.THE1_BASE_URL ?? rawEnv.THE1_API_BASE_URL,
   };

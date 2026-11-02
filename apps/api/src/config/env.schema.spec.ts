@@ -46,8 +46,24 @@ describe('Environment Schema Validation (dev / staging / prod & The 1 Config)', 
       ...validBaseEnv,
       APP_ENV: 'prod',
       NODE_ENV: 'production',
+      LINE_CHANNEL_ID: '1234567890',
+      LINE_VERIFY_MOCK: 'false',
+      THE1_PASSPORT_URL: 'https://passport.the1.co.th/authorize',
+      JWT_ACCESS_EXPIRES_SECONDS: '600',
+      JWT_REFRESH_EXPIRES_SECONDS: '86400',
+      AUTH_RATE_LIMIT_PER_IP: '30',
+      AUTH_RATE_LIMIT_PER_LINE_UID: '15',
+      AUTH_RATE_LIMIT_WINDOW_SECONDS: '60',
     });
     expect(prodConfig.APP_ENV).toBe(AppEnvironment.PROD);
+    expect(prodConfig.LINE_CHANNEL_ID).toBe('1234567890');
+    expect(prodConfig.LINE_VERIFY_MOCK).toBe(false);
+    expect(prodConfig.THE1_PASSPORT_URL).toBe('https://passport.the1.co.th/authorize');
+    expect(prodConfig.JWT_ACCESS_EXPIRES_SECONDS).toBe(600);
+    expect(prodConfig.JWT_REFRESH_EXPIRES_SECONDS).toBe(86400);
+    expect(prodConfig.AUTH_RATE_LIMIT_PER_IP).toBe(30);
+    expect(prodConfig.AUTH_RATE_LIMIT_PER_LINE_UID).toBe(15);
+    expect(prodConfig.AUTH_RATE_LIMIT_WINDOW_SECONDS).toBe(60);
   });
 
   it('ควรโยนข้อผิดพลาดเมื่อระบุ APP_ENV ที่ไม่อยู่ใน dev | staging | prod', () => {

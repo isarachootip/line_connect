@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { EncryptionService } from '../../../common/crypto/encryption.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
@@ -19,13 +20,17 @@ export class MemberProfileRepository {
     private readonly encryptionService: EncryptionService,
   ) {}
 
-  // บันทึกหรืออัปเดตแคชโปรไฟล์สมาชิกโดยเข้ารหัส first_name และ last_name ก่อนลงฐานข้อมูล
-  async upsertProfile(input: MemberProfileDto): Promise<void> {
+  // บันทึกหรืออัปเดตแคชโปรไฟล์สมาชิกโดยเข้ารหัส first_name และ last_name ก่อนลงฐานข้อมูล รองรับ TransactionClient
+  async upsertProfile(
+    input: MemberProfileDto,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const db = tx ?? this.prisma;
     const encryptedFirst = this.encryptionService.encrypt(input.firstName);
     const encryptedLast = this.encryptionService.encrypt(input.lastName);
     const refreshedAt = input.refreshedAt ?? new Date();
 
-    await this.prisma.memberProfile.upsert({
+    await db.memberProfile.upsert({
       where: { memberId: input.memberId },
       create: {
         memberId: input.memberId,
@@ -45,9 +50,13 @@ export class MemberProfileRepository {
     });
   }
 
-  // ดึงข้อมูลโปรไฟล์สมาชิกจากแคชพร้อมถอดรหัสชื่อ-นามสกุล
-  async findByMemberId(memberId: string): Promise<MemberProfileDto | null> {
-    const row = await this.prisma.memberProfile.findUnique({
+  // ดึงข้อมูลโปรไฟล์สมาชิกจากแคชพร้อมถอดรหัสชื่อ-นามสกุล รองรับ TransactionClient
+  async findByMemberId(
+    memberId: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<MemberProfileDto | null> {
+    const db = tx ?? this.prisma;
+    const row = await db.memberProfile.findUnique({
       where: { memberId },
     });
     if (!row) {

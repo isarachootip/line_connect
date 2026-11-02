@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Brand, LineLink, LineLinkStatus } from '@prisma/client';
+import { Brand, LineLink, LineLinkStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 export interface LinkMemberParams {
@@ -13,10 +13,14 @@ export interface LinkMemberParams {
 export class LineLinkRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ผูกบัญชีหรืออัปเดตสถานะกลับมาเป็น active ตาม unique (line_uid, brand)
-  async linkMember(params: LinkMemberParams): Promise<LineLink> {
+  // ผูกบัญชีหรืออัปเดตสถานะกลับมาเป็น active ตาม unique (line_uid, brand) รองรับ TransactionClient
+  async linkMember(
+    params: LinkMemberParams,
+    tx?: Prisma.TransactionClient,
+  ): Promise<LineLink> {
+    const db = tx ?? this.prisma;
     const now = new Date();
-    return this.prisma.lineLink.upsert({
+    return db.lineLink.upsert({
       where: {
         lineUid_brand: {
           lineUid: params.lineUid,
@@ -38,21 +42,28 @@ export class LineLinkRepository {
     });
   }
 
-  // ค้นหาข้อมูลการผูกบัญชีจาก line_uid และ brand
+  // ค้นหาข้อมูลการผูกบัญชีจาก line_uid และ brand รองรับ TransactionClient
   async findByLineUidAndBrand(
     lineUid: string,
     brand: Brand,
+    tx?: Prisma.TransactionClient,
   ): Promise<LineLink | null> {
-    return this.prisma.lineLink.findUnique({
+    const db = tx ?? this.prisma;
+    return db.lineLink.findUnique({
       where: {
         lineUid_brand: { lineUid, brand },
       },
     });
   }
 
-  // ยกเลิกการผูกบัญชีโดยเปลี่ยนสถานะเป็น unlinked
-  async unlinkMember(lineUid: string, brand: Brand): Promise<LineLink> {
-    return this.prisma.lineLink.update({
+  // ยกเลิกการผูกบัญชีโดยเปลี่ยนสถานะเป็น unlinked รองรับ TransactionClient
+  async unlinkMember(
+    lineUid: string,
+    brand: Brand,
+    tx?: Prisma.TransactionClient,
+  ): Promise<LineLink> {
+    const db = tx ?? this.prisma;
+    return db.lineLink.update({
       where: {
         lineUid_brand: { lineUid, brand },
       },

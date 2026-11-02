@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Consent, ConsentType } from '@prisma/client';
+import { Consent, ConsentType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 export interface ConsentRecordInput {
@@ -14,9 +14,13 @@ export interface ConsentRecordInput {
 export class ConsentRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // บันทึกการให้ความยินยอมโดย INSERT แถวใหม่เสมอ
-  async grantConsent(input: ConsentRecordInput): Promise<Consent> {
-    return this.prisma.consent.create({
+  // บันทึกการให้ความยินยอมโดย INSERT แถวใหม่เสมอ รองรับ TransactionClient
+  async grantConsent(
+    input: ConsentRecordInput,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Consent> {
+    const db = tx ?? this.prisma;
+    return db.consent.create({
       data: {
         memberId: input.memberId,
         type: input.type,
@@ -28,8 +32,12 @@ export class ConsentRepository {
   }
 
   // บันทึกการเพิกถอนความยินยอมโดย INSERT แถวใหม่เสมอ (ห้าม update ทับแถวเดิม)
-  async revokeConsent(input: ConsentRecordInput): Promise<Consent> {
-    return this.prisma.consent.create({
+  async revokeConsent(
+    input: ConsentRecordInput,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Consent> {
+    const db = tx ?? this.prisma;
+    return db.consent.create({
       data: {
         memberId: input.memberId,
         type: input.type,
