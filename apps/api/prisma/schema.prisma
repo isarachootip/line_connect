@@ -191,3 +191,17 @@ model AuditLog {
   @@index([action, createdAt])
   @@map("audit_log")
 }
+
+// 12. ตารางเก็บรายการยอดใช้จ่ายที่ข้อมูลผิดรูปแบบ (Dead-Letter Table) พร้อมเหตุผลเพื่อการตรวจสอบย้อนหลัง
+model SpendingDeadLetter {
+  id         String   @id @default(uuid())
+  txnId      String?  @map("txn_id")
+  channel    String
+  rawPayload Json     @map("raw_payload") @db.JsonB
+  reason     String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([channel, createdAt])
+  @@index([txnId])
+  @@map("spending_dead_letter")
+}

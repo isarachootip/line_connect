@@ -3,6 +3,7 @@ import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { CryptoModule } from './common/crypto/crypto.module';
+import { EventsModule } from './common/events/events.module';
 import { RedisService } from './common/redis/redis.service';
 import { StructuredJsonLogger } from './common/logger/structured-json.logger';
 import { GatewayModule } from './modules/gateway/gateway.module';
@@ -19,6 +20,7 @@ import { AuditModule } from './modules/audit/audit.module';
   imports: [
     PrismaModule,
     CryptoModule,
+    EventsModule,
     GatewayModule,
     AuthModule,
     MemberModule,

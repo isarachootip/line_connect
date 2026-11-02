@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Brand } from '@prisma/client';
 
 export const MEMBER_REGISTERED_EVENT = 'member.registered' as const;
+export const SPENDING_RECORDED_EVENT = 'spending.recorded' as const;
 
 export interface MemberRegisteredEvent {
   readonly eventName: typeof MEMBER_REGISTERED_EVENT;
@@ -11,8 +12,22 @@ export interface MemberRegisteredEvent {
   readonly occurredAt: Date;
 }
 
+export interface SpendingRecordedEvent {
+  readonly eventName: typeof SPENDING_RECORDED_EVENT;
+  readonly txnId: string;
+  readonly memberId: string;
+  readonly store: string;
+  readonly amount: number;
+  readonly category: string;
+  readonly sku: string;
+  readonly txnAt: Date;
+  readonly channel: 'PUSH' | 'PULL';
+  readonly occurredAt: Date;
+}
+
 export type DomainEventMap = {
   readonly [MEMBER_REGISTERED_EVENT]: MemberRegisteredEvent;
+  readonly [SPENDING_RECORDED_EVENT]: SpendingRecordedEvent;
 };
 
 export type DomainEventName = keyof DomainEventMap;
@@ -21,7 +36,7 @@ export type DomainEventHandler<K extends DomainEventName> = (
   payload: DomainEventMap[K],
 ) => Promise<void> | void;
 
-// บริการรับ-ส่ง Domain Event ภายในระบบ เช่น member.registered สำหรับต่อยอดแจกคูปองใน Prompt 8
+// บริการรับ-ส่ง Domain Event ภายในระบบ เช่น member.registered และ spending.recorded สำหรับ Mission Engine & Coupon
 @Injectable()
 export class DomainEventBus {
   private readonly handlers = new Map<

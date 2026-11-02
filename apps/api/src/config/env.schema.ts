@@ -73,6 +73,18 @@ export const envSchema = z.object({
   THE1_CLIENT_ID: z.string().min(1, 'ต้องระบุ THE1_CLIENT_ID'),
   THE1_CLIENT_SECRET: z.string().min(1, 'ต้องระบุ THE1_CLIENT_SECRET'),
   THE1_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),
+  TWD_SPENDING_MODE: z.enum(['PUSH', 'PULL', 'BOTH']).default('BOTH'),
+  TWD_SPENDING_AUTH_MODE: z.enum(['HMAC', 'MTLS']).default('HMAC'),
+  TWD_SPENDING_HMAC_SECRET: z
+    .string()
+    .min(16, 'TWD_SPENDING_HMAC_SECRET ต้องมีความยาวอย่างน้อย 16 ตัวอักษร')
+    .default('replace_with_strong_twd_spending_hmac_secret_32chars'),
+  TWD_SPENDING_ALLOWED_IPS: z.string().min(1).default('127.0.0.1,::1,10.0.0.1'),
+  TWD_SPENDING_PULL_INTERVAL_MINUTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15),
   TWD_SPENDING_API_USE_MOCK: z
     .string()
     .default('true')

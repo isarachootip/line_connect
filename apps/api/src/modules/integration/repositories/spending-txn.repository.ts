@@ -41,6 +41,33 @@ export class SpendingTxnRepository {
     });
   }
 
+  // บันทึกธุรกรรมแบบ Idempotent แท้จริง: หาก txn_id มีอยู่แล้วจะข้ามทันทีและคืนค่า created=false เพื่อไม่ให้นับซ้ำ
+  async createIfNotExists(
+    input: CreateSpendingTxnInput,
+  ): Promise<{ readonly created: boolean; readonly record: SpendingTxn }> {
+    const existing = await this.prisma.spendingTxn.findUnique({
+      where: { txnId: input.txnId },
+    });
+    if (existing) {
+      return { created: false, record: existing };
+    }
+
+    const decimalAmount = new Prisma.Decimal(input.amount);
+    const createdRecord = await this.prisma.spendingTxn.create({
+      data: {
+        txnId: input.txnId,
+        memberId: input.memberId,
+        store: input.store,
+        amount: decimalAmount,
+        category: input.category,
+        sku: input.sku,
+        txnAt: input.txnAt,
+      },
+    });
+
+    return { created: true, record: createdRecord };
+  }
+
   // ค้นหารายการยอดใช้จ่ายของสมาชิกตามช่วงเวลาสำหรับคำนวณ Mission
   async findByMemberAndPeriod(
     memberId: string,

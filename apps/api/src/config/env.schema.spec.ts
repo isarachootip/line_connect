@@ -64,6 +64,9 @@ describe('Environment Schema Validation (dev / staging / prod & The 1 Config)', 
     expect(prodConfig.AUTH_RATE_LIMIT_PER_IP).toBe(30);
     expect(prodConfig.AUTH_RATE_LIMIT_PER_LINE_UID).toBe(15);
     expect(prodConfig.AUTH_RATE_LIMIT_WINDOW_SECONDS).toBe(60);
+    expect(prodConfig.TWD_SPENDING_MODE).toBe('BOTH');
+    expect(prodConfig.TWD_SPENDING_AUTH_MODE).toBe('HMAC');
+    expect(prodConfig.TWD_SPENDING_PULL_INTERVAL_MINUTES).toBe(15);
   });
 
   it('ควรโยนข้อผิดพลาดเมื่อระบุ APP_ENV ที่ไม่อยู่ใน dev | staging | prod', () => {
