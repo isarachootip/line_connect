@@ -4,6 +4,7 @@ dist/
 build/
 coverage/
 .turbo/
+*.tsbuildinfo
 
 # ไฟล์ Environment และความลับ (ห้าม Commit ขึ้น Git โดยเด็ดขาด)
 .env
