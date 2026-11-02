@@ -3,6 +3,7 @@ import { Brand } from '@prisma/client';
 
 export const MEMBER_REGISTERED_EVENT = 'member.registered' as const;
 export const SPENDING_RECORDED_EVENT = 'spending.recorded' as const;
+export const MISSION_COMPLETED_EVENT = 'mission.completed' as const;
 
 export interface MemberRegisteredEvent {
   readonly eventName: typeof MEMBER_REGISTERED_EVENT;
@@ -25,9 +26,20 @@ export interface SpendingRecordedEvent {
   readonly occurredAt: Date;
 }
 
+export interface MissionCompletedEvent {
+  readonly eventName: typeof MISSION_COMPLETED_EVENT;
+  readonly missionId: string;
+  readonly memberId: string;
+  readonly progress: number;
+  readonly target: number;
+  readonly reward: Record<string, unknown>;
+  readonly completedAt: Date;
+}
+
 export type DomainEventMap = {
   readonly [MEMBER_REGISTERED_EVENT]: MemberRegisteredEvent;
   readonly [SPENDING_RECORDED_EVENT]: SpendingRecordedEvent;
+  readonly [MISSION_COMPLETED_EVENT]: MissionCompletedEvent;
 };
 
 export type DomainEventName = keyof DomainEventMap;

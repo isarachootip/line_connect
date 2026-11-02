@@ -85,4 +85,17 @@ export class SpendingTxnRepository {
       orderBy: { txnAt: 'asc' },
     });
   }
+
+  // ดึงรายการยอดใช้จ่ายของสมาชิกทุกคนในช่วงเวลาของภารกิจ (สำหรับคำสั่ง recompute ทั้งแคมเปญ)
+  async findAllByPeriod(startAt: Date, endAt: Date): Promise<SpendingTxn[]> {
+    return this.prisma.spendingTxn.findMany({
+      where: {
+        txnAt: {
+          gte: startAt,
+          lte: endAt,
+        },
+      },
+      orderBy: { txnAt: 'asc' },
+    });
+  }
 }

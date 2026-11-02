@@ -30,3 +30,11 @@ export {
   type MemberConsentResponseDto,
   type UpdateMarketingConsentRequestDto,
 } from './types/member.type';
+
+export {
+  type MissionRuleType,
+  type MissionPeriodType,
+  type MissionRuleConfig,
+  type MemberMissionDetailDto,
+  type MemberMissionListResponseDto,
+} from './types/mission.type';

@@ -52,6 +52,21 @@ export class MissionRepository {
     });
   }
 
+  // ค้นหาภารกิจตาม missionId
+  async findMissionById(missionId: string): Promise<Mission | null> {
+    return this.prisma.mission.findUnique({
+      where: { missionId },
+    });
+  }
+
+  // ดึงรายการภารกิจทั้งหมดที่เปิดใช้งานอยู่ (สำหรับแสดงในหน้า GET /me/missions)
+  async findAllAvailableMissions(): Promise<Mission[]> {
+    return this.prisma.mission.findMany({
+      where: { status: 'active' },
+      orderBy: { startAt: 'desc' },
+    });
+  }
+
   // ดึงความคืบหน้าภารกิจของสมาชิกสำหรับรายการภารกิจที่ระบุ
   async findMemberProgresses(
     memberId: string,
@@ -64,6 +79,27 @@ export class MissionRepository {
           ? { missionId: { in: [...missionIds] } }
           : {}),
       },
+    });
+  }
+
+  // ดึงความคืบหน้าของสมาชิกรายคนในภารกิจที่ระบุ
+  async findProgressByMemberAndMission(
+    memberId: string,
+    missionId: string,
+  ): Promise<MissionProgress | null> {
+    return this.prisma.missionProgress.findUnique({
+      where: {
+        memberId_missionId: { memberId, missionId },
+      },
+    });
+  }
+
+  // ดึงความคืบหน้าของสมาชิกทุกคนในภารกิจที่ระบุ (สำหรับใช้ร่วมกับ recompute)
+  async findAllProgressesByMission(
+    missionId: string,
+  ): Promise<MissionProgress[]> {
+    return this.prisma.missionProgress.findMany({
+      where: { missionId },
     });
   }
 
