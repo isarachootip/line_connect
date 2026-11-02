@@ -41,12 +41,8 @@ export class CouponService implements OnModuleDestroy {
     private readonly auditRepo: AuditLogRepository,
   ) {
     this.unsubscribers.push(
-      this.eventBus.subscribe(MEMBER_REGISTERED_EVENT, async (evt) => {
-        await this.handleMemberRegistered(evt);
-      }),
-      this.eventBus.subscribe(MISSION_COMPLETED_EVENT, async (evt) => {
-        await this.handleMissionCompleted(evt);
-      }),
+      this.eventBus.subscribe(MEMBER_REGISTERED_EVENT, (evt) => this.handleMemberRegistered(evt)),
+      this.eventBus.subscribe(MISSION_COMPLETED_EVENT, (evt) => this.handleMissionCompleted(evt)),
     );
   }
 
@@ -62,7 +58,6 @@ export class CouponService implements OnModuleDestroy {
 
     try {
       const now = event.occurredAt ?? new Date();
-      const validTo = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
       const welcomeCoupon = await this.couponRepo.upsertCouponByCode({
         couponId: 'CPN-ONLINE-FIRST-REG',
         code: FIRST_REGISTRATION_COUPON_CODE,
@@ -71,15 +66,10 @@ export class CouponService implements OnModuleDestroy {
         value: 20,
         maxDiscount: 400,
         validFrom: now,
-        validTo,
+        validTo: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000),
       });
 
-      const alreadyGranted = await this.couponRepo.hasMemberReceivedCoupon(
-        event.memberId,
-        welcomeCoupon.couponId,
-      );
-      if (alreadyGranted) return;
-
+      if (await this.couponRepo.hasMemberReceivedCoupon(event.memberId, welcomeCoupon.couponId)) return;
       await this.couponRepo.grantCouponToMember(event.memberId, welcomeCoupon.couponId);
       await this.auditRepo.recordAudit({
         actor: 'system:coupon-service',
@@ -120,17 +110,15 @@ export class CouponService implements OnModuleDestroy {
 
     if (couponCode) {
       const now = event.completedAt ?? new Date();
-      const validTo = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
       const value = typeof reward.value === 'number' ? reward.value : 100;
-      const maxDiscount = typeof reward.maxDiscount === 'number' ? reward.maxDiscount : value;
       const coupon = await this.couponRepo.upsertCouponByCode({
         code: couponCode,
         source: CouponSource.TWD,
         type: typeof reward.discountType === 'string' ? reward.discountType : 'DISCOUNT_AMOUNT',
         value,
-        maxDiscount,
+        maxDiscount: typeof reward.maxDiscount === 'number' ? reward.maxDiscount : value,
         validFrom: now,
-        validTo,
+        validTo: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
       });
       await this.couponRepo.grantCouponToMember(event.memberId, coupon.couponId);
       await this.auditRepo.recordAudit({

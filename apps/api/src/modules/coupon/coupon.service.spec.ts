@@ -1,12 +1,5 @@
 import { ConflictException } from '@nestjs/common';
-import {
-  Brand,
-  Coupon,
-  CouponSource,
-  CouponWallet,
-  CouponWalletStatus,
-  Prisma,
-} from '@prisma/client';
+import { Brand, Coupon, CouponSource, CouponWallet, CouponWalletStatus, Prisma } from '@prisma/client';
 import {
   DomainEventBus,
   MEMBER_REGISTERED_EVENT,
@@ -109,41 +102,19 @@ describe('CouponModule Unit & Concurrency Tests (Prompt 8)', () => {
   it('ลงทะเบียนซ้ำไม่ได้คูปองซ้ำ: เมื่อได้รับ member.registered ซ้ำหลายครั้ง ต้องแจกคูปอง Online First Registration (ลด 20% สูงสุด 400 บาท) เพียงใบเดียว', async () => {
     const { eventBus, controller, couponService } = createInMemoryCouponTestContext();
     const memberId = 'T1_MEM_001';
+    const occurredAt = new Date('2026-11-02T10:00:00.000Z');
 
     await Promise.all([
-      eventBus.publish(MEMBER_REGISTERED_EVENT, {
-        eventName: MEMBER_REGISTERED_EVENT,
-        memberId,
-        lineUid: 'U_LINE_1',
-        brand: Brand.TWD,
-        occurredAt: new Date('2026-11-02T10:00:00.000Z'),
-      }),
-      eventBus.publish(MEMBER_REGISTERED_EVENT, {
-        eventName: MEMBER_REGISTERED_EVENT,
-        memberId,
-        lineUid: 'U_LINE_1',
-        brand: Brand.BNB,
-        occurredAt: new Date('2026-11-02T10:00:00.000Z'),
-      }),
+      eventBus.publish(MEMBER_REGISTERED_EVENT, { eventName: MEMBER_REGISTERED_EVENT, memberId, lineUid: 'U_LINE_1', brand: Brand.TWD, occurredAt }),
+      eventBus.publish(MEMBER_REGISTERED_EVENT, { eventName: MEMBER_REGISTERED_EVENT, memberId, lineUid: 'U_LINE_1', brand: Brand.BNB, occurredAt }),
     ]);
-    await eventBus.publish(MEMBER_REGISTERED_EVENT, {
-      eventName: MEMBER_REGISTERED_EVENT,
-      memberId,
-      lineUid: 'U_LINE_1',
-      brand: Brand.TWD,
-      occurredAt: new Date('2026-11-02T10:05:00.000Z'),
-    });
+    await eventBus.publish(MEMBER_REGISTERED_EVENT, { eventName: MEMBER_REGISTERED_EVENT, memberId, lineUid: 'U_LINE_1', brand: Brand.TWD, occurredAt });
 
     const req = { sessionUser: { jti: 'j1', sub: memberId, lineUid: 'U_LINE_1', brand: Brand.TWD, type: 'access' as const, iat: 1, exp: 9999999999 } };
     const listRes = await controller.listMyCoupons(req, 'available');
 
     expect(listRes.coupons).toHaveLength(1);
-    expect(listRes.coupons[0]).toMatchObject({
-      code: FIRST_REGISTRATION_COUPON_CODE,
-      value: 20,
-      maxDiscount: 400,
-      status: 'available',
-    });
+    expect(listRes.coupons[0]).toMatchObject({ code: FIRST_REGISTRATION_COUPON_CODE, value: 20, maxDiscount: 400, status: 'available' });
     couponService.onModuleDestroy();
   });
 
@@ -163,11 +134,7 @@ describe('CouponModule Unit & Concurrency Tests (Prompt 8)', () => {
     const available = await controller.listMyCoupons(req, 'available');
     const walletId = available.coupons[0].walletId;
 
-    const results = await Promise.allSettled([
-      controller.useMyCoupon(req, walletId),
-      controller.useMyCoupon(req, walletId),
-    ]);
-
+    const results = await Promise.allSettled([controller.useMyCoupon(req, walletId), controller.useMyCoupon(req, walletId)]);
     const fulfilled = results.filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof controller.useMyCoupon>>> => r.status === 'fulfilled');
     const rejected = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
 
