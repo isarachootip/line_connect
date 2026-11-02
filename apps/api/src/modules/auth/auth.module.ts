@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DomainEventBus } from '../../common/events/domain-event-bus';
 import { AuditModule } from '../audit/audit.module';
 import { The1Module } from '../integration/the1/the1.module';
 import { MemberModule } from '../member/member.module';
 import { AuthController } from './auth.controller';
+import { SessionAuthGuard } from './guards/session-auth.guard';
 import { The1TokenRefreshJob } from './jobs/the1-token-refresh.job';
 import { ConsentRepository } from './repositories/consent.repository';
 import { LineLinkRepository } from './repositories/line-link.repository';
@@ -21,7 +22,7 @@ import { The1LinkingTransactionService } from './services/the1-linking-transacti
 
 // โมดูล Auth & Linking สำหรับเข้าสู่ระบบผ่าน LINE LIFF + The 1 OTP, ผูกบัญชี, ต่ออายุ Token และจัดการ PDPA Consent
 @Module({
-  imports: [AuditModule, The1Module, MemberModule],
+  imports: [AuditModule, The1Module, forwardRef(() => MemberModule)],
   controllers: [AuthController],
   providers: [
     LineLinkRepository,
@@ -47,6 +48,7 @@ import { The1LinkingTransactionService } from './services/the1-linking-transacti
       },
     },
     AuthService,
+    SessionAuthGuard,
     The1TokenRefreshJob,
   ],
   exports: [
@@ -55,6 +57,7 @@ import { The1LinkingTransactionService } from './services/the1-linking-transacti
     The1TokenRepository,
     DomainEventBus,
     SessionTokenService,
+    SessionAuthGuard,
     AuthRateLimiterService,
     AuthService,
     The1TokenRefreshJob,

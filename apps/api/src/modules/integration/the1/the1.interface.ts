@@ -23,6 +23,8 @@ export interface The1MemberDetail {
   readonly status: 'ACTIVE' | 'INACTIVE';
   readonly registeredChannel: string;
   readonly joinedAt: string;
+  readonly phone?: string;
+  readonly email?: string;
 }
 
 // ข้อมูลโปรไฟล์และคะแนนสะสมของสมาชิกจาก The 1
@@ -32,6 +34,8 @@ export interface The1Profile {
   readonly lastName: string;
   readonly tier: 'MEMBER' | 'GOLD' | 'PLATINUM';
   readonly points: number;
+  readonly phone?: string;
+  readonly email?: string;
 }
 
 // ประวัติการรับหรือใช้คะแนนสะสม (Point Claim Log)

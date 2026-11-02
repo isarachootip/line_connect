@@ -82,4 +82,25 @@ export class CouponRepository {
       include: { coupon: true },
     });
   }
+
+  // ดึงคูปองพร้อมใช้งานล่าสุดของลูกค้าพร้อมรายละเอียดคูปอง (จำกัดจำนวนสูงสุด เช่น 5 ใบล่าสุดสำหรับหน้า Home)
+  async findLatestAvailableCouponsWithDetail(
+    memberId: string,
+    limit = 5,
+  ): Promise<Array<CouponWallet & { coupon: Coupon }>> {
+    const rows = await this.prisma.couponWallet.findMany({
+      where: {
+        memberId,
+        status: CouponWalletStatus.available,
+      },
+      include: { coupon: true },
+      orderBy: {
+        coupon: {
+          validFrom: 'desc',
+        },
+      },
+      take: limit,
+    });
+    return rows.slice(0, limit);
+  }
 }

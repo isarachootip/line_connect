@@ -52,6 +52,21 @@ export class MissionRepository {
     });
   }
 
+  // ดึงความคืบหน้าภารกิจของสมาชิกสำหรับรายการภารกิจที่ระบุ
+  async findMemberProgresses(
+    memberId: string,
+    missionIds?: readonly string[],
+  ): Promise<MissionProgress[]> {
+    return this.prisma.missionProgress.findMany({
+      where: {
+        memberId,
+        ...(missionIds && missionIds.length > 0
+          ? { missionId: { in: [...missionIds] } }
+          : {}),
+      },
+    });
+  }
+
   // อัปเดตความคืบหน้าภารกิจของสมาชิกตาม unique (member_id, mission_id)
   async upsertProgress(
     input: UpsertMissionProgressInput,

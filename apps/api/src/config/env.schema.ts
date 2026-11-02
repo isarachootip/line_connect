@@ -20,6 +20,11 @@ export const envSchema = z.object({
   REDIS_HOST: z.string().min(1).default('localhost'),
   REDIS_PORT: z.coerce.number().int().positive().default(6379),
   REDIS_PASSWORD: z.string().optional().default(''),
+  MEMBER_PROFILE_CACHE_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(600),
   PII_ENCRYPTION_KEY: z
     .string()
     .regex(

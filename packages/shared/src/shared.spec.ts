@@ -6,6 +6,9 @@ import {
   CouponWalletStatus,
   HealthStatusDto,
   LineLinkStatus,
+  MemberHomeResponseDto,
+  MemberProfileResponseDto,
+  MemberConsentResponseDto,
   createSuccessResponse,
   createErrorResponse,
   isValidBrandCode,
@@ -59,5 +62,48 @@ describe('Shared Package Domain Contracts', () => {
       code: 'AUTH_OTP_EXPIRED',
       message: 'รหัส OTP หมดอายุ',
     });
+  });
+
+  it('ควรรองรับโครงสร้าง DTO ของหน้า Home, Profile และ Consent สำหรับใช้งานร่วมกับ LIFF', () => {
+    const homeDto: MemberHomeResponseDto = {
+      memberId: 'T1_MEM_001',
+      brand: BrandCode.TWD,
+      firstName: 'สมชาย',
+      lastName: 'สร้างบ้าน',
+      fullName: 'สมชาย สร้างบ้าน',
+      tier: 'GOLD',
+      points: { twd: 3500, bnb: 3500, total: 3500 },
+      availableCoupons: [],
+      activeMissions: [],
+      stale: false,
+      refreshed_at: '2026-11-02T10:00:00.000Z',
+    };
+    const profileDto: MemberProfileResponseDto = {
+      memberId: 'T1_MEM_001',
+      cardNumber: '7010000000001',
+      firstName: 'สมชาย',
+      lastName: 'สร้างบ้าน',
+      fullName: 'สมชาย สร้างบ้าน',
+      maskedPhone: '081-***-5678',
+      maskedEmail: 'so***@thaiwatsadu.com',
+      tier: 'GOLD',
+      points: 3500,
+      pointClaimHistory: [],
+      stale: false,
+      refreshed_at: '2026-11-02T10:00:00.000Z',
+    };
+    const consentDto: MemberConsentResponseDto = {
+      memberId: 'T1_MEM_001',
+      marketing: {
+        type: ConsentType.MARKETING,
+        version: 'v1.0',
+        granted: true,
+        updatedAt: '2026-11-02T10:00:00.000Z',
+      },
+      history: [],
+    };
+    expect(homeDto.stale).toBe(false);
+    expect(profileDto.maskedPhone).toBe('081-***-5678');
+    expect(consentDto.marketing?.granted).toBe(true);
   });
 });

@@ -17,3 +17,16 @@ export {
   createSuccessResponse,
   createErrorResponse,
 } from './types/api-response.type';
+
+export {
+  type MemberBrandPointsDto,
+  type MemberHomeCouponDto,
+  type MemberHomeMissionDto,
+  type MemberHomeResponseDto,
+  type PointClaimHistoryItemDto,
+  type MemberProfileResponseDto,
+  type ConsentStatusSummaryDto,
+  type ConsentHistoryEntryDto,
+  type MemberConsentResponseDto,
+  type UpdateMarketingConsentRequestDto,
+} from './types/member.type';

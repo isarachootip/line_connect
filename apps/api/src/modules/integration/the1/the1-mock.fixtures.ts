@@ -20,6 +20,8 @@ export function createSampleThe1Members(): MockMemberSeed[] {
         status: 'ACTIVE',
         registeredChannel: 'TWD_LIFF',
         joinedAt: '2024-01-15T08:00:00.000Z',
+        phone: '0812345678',
+        email: 'somchai.builder@thaiwatsadu.com',
       },
       profile: {
         memberId: 'T1_MEM_001',
@@ -27,6 +29,8 @@ export function createSampleThe1Members(): MockMemberSeed[] {
         lastName: 'สร้างบ้าน',
         tier: 'GOLD',
         points: 3500,
+        phone: '0812345678',
+        email: 'somchai.builder@thaiwatsadu.com',
       },
       logs: [
         {
@@ -46,6 +50,8 @@ export function createSampleThe1Members(): MockMemberSeed[] {
         status: 'ACTIVE',
         registeredChannel: 'BNB_LIFF',
         joinedAt: '2024-05-20T09:30:00.000Z',
+        phone: '0898765432',
+        email: 'kanda.condo@bnbhome.com',
       },
       profile: {
         memberId: 'T1_MEM_002',
@@ -53,6 +59,8 @@ export function createSampleThe1Members(): MockMemberSeed[] {
         lastName: 'แต่งคอนโด',
         tier: 'PLATINUM',
         points: 12800,
+        phone: '0898765432',
+        email: 'kanda.condo@bnbhome.com',
       },
       logs: [],
     },
@@ -63,6 +71,8 @@ export function createSampleThe1Members(): MockMemberSeed[] {
         status: 'ACTIVE',
         registeredChannel: 'TWD_STORE',
         joinedAt: '2025-02-10T11:15:00.000Z',
+        phone: '0861112233',
+        email: 'anan.contractor@example.com',
       },
       profile: {
         memberId: 'T1_MEM_003',
@@ -70,6 +80,8 @@ export function createSampleThe1Members(): MockMemberSeed[] {
         lastName: 'ช่างรับเหมา',
         tier: 'MEMBER',
         points: 950,
+        phone: '0861112233',
+        email: 'anan.contractor@example.com',
       },
       logs: [],
     },
