@@ -45,13 +45,22 @@ export class AdminAuthService implements AdminSsoProvider {
     this.jwtSecret = jwtSecret;
   }
 
-  // ตรวจสอบ SSO Token ขององค์กร (รองรับ Mock Token เช่น "mock-sso-admin", "mock-sso-marketing", "mock-sso-viewer")
+  // ตรวจสอบ SSO Token ขององค์กร (รองรับ Mock Token เฉพาะเมื่อไม่ได้ปิดโหมด Mock / ไม่ใช่ Production)
   async verifyCorporateSsoToken(
     input: AdminSsoVerifyInput,
   ): Promise<AdminUserDto> {
     const token = input.ssoToken.trim();
     if (!token || token === 'invalid-sso-token') {
       throw new UnauthorizedException('SSO Token ขององค์กรไม่ถูกต้องหรือหมดอายุ');
+    }
+
+    const isMockAllowed =
+      process.env.ADMIN_SSO_USE_MOCK !== 'false' &&
+      process.env.APP_ENV !== 'prod';
+    if (!isMockAllowed && token.toLowerCase().startsWith('mock-sso-')) {
+      throw new UnauthorizedException(
+        'ไม่อนุญาตให้ใช้ Mock SSO Token ในสภาพแวดล้อม Production',
+      );
     }
 
     const lower = token.toLowerCase();
@@ -103,7 +112,12 @@ export class AdminAuthService implements AdminSsoProvider {
     }
     const [header, payload, signature] = parts;
     const expectedSig = this.sign(`${header}.${payload}`);
-    if (signature !== expectedSig) {
+    const sigBuf = Buffer.from(signature, 'utf8');
+    const expBuf = Buffer.from(expectedSig, 'utf8');
+    if (
+      sigBuf.length !== expBuf.length ||
+      !crypto.timingSafeEqual(sigBuf, expBuf)
+    ) {
       throw new UnauthorizedException('ลายเซ็น Admin Token ไม่ถูกต้อง');
     }
 

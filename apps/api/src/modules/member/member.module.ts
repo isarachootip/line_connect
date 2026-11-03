@@ -10,6 +10,7 @@ import { MemberProfileRepository } from './repositories/member-profile.repositor
 import { MemberConsentService } from './services/member-consent.service';
 import { MemberProfileCacheService } from './services/member-profile-cache.service';
 import { MemberService } from './services/member.service';
+import { PdpaRetentionService } from './services/pdpa-retention.service';
 
 // โมดูล Member สำหรับแสดงข้อมูลหน้า Home, Profile, ประวัติแต้ม และจัดการ Consent ของไทวัสดุ (TWD) และ BnB Home (BNB)
 @Module({
@@ -35,12 +36,14 @@ import { MemberService } from './services/member.service';
     MemberProfileCacheService,
     MemberConsentService,
     MemberService,
+    PdpaRetentionService,
   ],
   exports: [
     MemberProfileRepository,
     MemberProfileCacheService,
     MemberConsentService,
     MemberService,
+    PdpaRetentionService,
   ],
 })
 export class MemberModule {}

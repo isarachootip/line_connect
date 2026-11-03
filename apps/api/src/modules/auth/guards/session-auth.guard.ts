@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -11,10 +12,13 @@ import {
 
 export interface AuthenticatedRequest {
   readonly headers?: Record<string, string | string[] | undefined>;
+  readonly query?: Record<string, unknown>;
+  readonly params?: Record<string, unknown>;
+  readonly body?: Record<string, unknown>;
   sessionUser?: SessionJwtPayload;
 }
 
-// Guard สำหรับตรวจสอบ Session JWT จาก Prompt 4 ก่อนอนุญาตให้เข้าถึง Endpoint ภายใต้ /me/*
+// Guard สำหรับตรวจสอบ Session JWT และป้องกัน IDOR (ไม่อนุญาตให้เข้าถึงข้อมูลของสมาชิกรายอื่น) ภายใต้ /me/*
 @Injectable()
 export class SessionAuthGuard implements CanActivate {
   constructor(private readonly sessionTokenService: SessionTokenService) {}
@@ -40,6 +44,25 @@ export class SessionAuthGuard implements CanActivate {
       token,
       'access',
     );
+
+    const attemptedMemberId =
+      request.headers?.['x-member-id'] ??
+      request.query?.memberId ??
+      request.params?.memberId ??
+      (typeof request.body === 'object' && request.body !== null
+        ? (request.body as Record<string, unknown>).memberId
+        : undefined);
+
+    if (
+      typeof attemptedMemberId === 'string' &&
+      attemptedMemberId.trim().length > 0 &&
+      attemptedMemberId.trim() !== verifiedPayload.sub
+    ) {
+      throw new ForbiddenException(
+        'ไม่อนุญาตให้เข้าถึงข้อมูลของสมาชิกรายอื่น (IDOR Protection)',
+      );
+    }
+
     request.sessionUser = verifiedPayload;
     return true;
   }

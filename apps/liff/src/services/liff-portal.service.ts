@@ -65,9 +65,8 @@ export class LiffPortalApiService {
   }
 
   async unlinkAccount(accessToken: string): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>('/auth/logout', accessToken, {
+    return this.request<{ success: boolean }>('/me/unlink', accessToken, {
       method: 'POST',
-      body: JSON.stringify({ accessToken }),
     });
   }
 

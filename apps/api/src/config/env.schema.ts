@@ -111,6 +111,11 @@ export const envSchema = z.object({
     .url()
     .default('https://login.microsoftonline.com/common/v2.0'),
   ADMIN_SSO_CLIENT_ID: z.string().min(1).default('default_admin_sso_client_id'),
+  PDPA_RETENTION_DAYS: z.coerce.number().int().positive().default(365),
+  CORS_ALLOWED_ORIGINS: z
+    .string()
+    .min(1)
+    .default('https://liff.line.me,http://localhost:5173,http://localhost:5174'),
 });
 
 export type AppEnvConfig = z.infer<typeof envSchema>;

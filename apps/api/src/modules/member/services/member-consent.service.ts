@@ -90,6 +90,7 @@ export class MemberConsentService {
       metadata: {
         granted: dto.granted,
         version: dto.version,
+        removedFromFutureSegmentsAndBatches: !dto.granted,
       },
     });
 

@@ -7,6 +7,10 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
+  Optional,
+  Post,
   Put,
   Req,
   UnauthorizedException,
@@ -19,12 +23,19 @@ import {
 import { SessionJwtPayload } from '../auth/services/session-token.service';
 import { parseUpdateMarketingConsentDto } from './dto/member.dto';
 import { MemberService } from './services/member.service';
+import {
+  PdpaRetentionService,
+  UnlinkMemberResponseDto,
+} from './services/pdpa-retention.service';
 
 // Controller สำหรับให้บริการข้อมูลสมาชิกภายใต้ /me/* (ทุก Endpoint ต้องผ่าน SessionAuthGuard จาก Prompt 4)
 @Controller('me')
 @UseGuards(SessionAuthGuard)
 export class MemberController {
-  constructor(private readonly memberService: MemberService) {}
+  constructor(
+    private readonly memberService: MemberService,
+    @Optional() private readonly pdpaRetentionService?: PdpaRetentionService,
+  ) {}
 
   // GET /me/home — ชื่อ, tier, แต้มแยก TWD/BnB, คูปองพร้อมใช้ 5 ใบล่าสุด, Mission ที่กำลังทำพร้อม progress
   @Get('home')
@@ -62,6 +73,19 @@ export class MemberController {
     const session = this.requireSession(req);
     const dto = parseUpdateMarketingConsentDto(body);
     return this.memberService.updateMarketingConsent(session, dto);
+  }
+
+  // POST /me/unlink — ยกเลิกการผูก LINE UID, ลบ the1_token, เปลี่ยน line_link เป็น unlinked และบันทึก audit_log
+  @Post('unlink')
+  @HttpCode(HttpStatus.OK)
+  async unlinkAccount(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<UnlinkMemberResponseDto> {
+    const session = this.requireSession(req);
+    if (!this.pdpaRetentionService) {
+      throw new UnauthorizedException('บริการจัดการสิทธิ์ PDPA ยังไม่พร้อมใช้งาน');
+    }
+    return this.pdpaRetentionService.unlinkMemberAccount(session);
   }
 
   private requireSession(req: AuthenticatedRequest): SessionJwtPayload {

@@ -4,19 +4,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { EncryptionService } from '../../../common/crypto/encryption.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { sanitizeCsvCell } from '../../../common/security/security-hardening';
 import { AuditLogRepository } from '../../audit/repositories/audit-log.repository';
 import { TargetBatchRepository } from '../repositories/target-batch.repository';
 import { SFTP_CLIENT_TOKEN, SftpClient, SftpUploadResult } from './sftp.client';
 
 // TODO: ยืนยันลำดับและชื่อคอลัมน์ CSV สุดท้ายกับทีม CRM/Data ของไทวัสดุก่อนขึ้น Production
 export const TWD_TARGET_BATCH_CSV_HEADERS = [
-  'member_id',
-  'brand',
-  'segment',
-  'completed_mission_id',
-  'total_spend',
-  'marketing_consent_version',
-  'exported_at',
+  'member_id', 'brand', 'segment', 'completed_mission_id', 'total_spend', 'marketing_consent_version', 'exported_at',
 ] as const;
 
 export interface TargetSegmentCriteria {
@@ -114,9 +109,16 @@ export class TargetBatchExportService {
       const brand = brandByMember.get(memberId) ?? criteria.brand ?? Brand.TWD;
       const totalSpend = (spendByMember.get(memberId) ?? 0).toFixed(2);
       const consentInfo = activeConsentMap.get(memberId)!;
-      csvLines.push(
-        [memberId, brand, criteria.segment, criteria.completedMissionId ?? '', totalSpend, consentInfo.version, exportedIso].join(','),
-      );
+      const rowCells = [
+        sanitizeCsvCell(memberId),
+        sanitizeCsvCell(brand),
+        sanitizeCsvCell(criteria.segment),
+        sanitizeCsvCell(criteria.completedMissionId ?? ''),
+        totalSpend,
+        sanitizeCsvCell(consentInfo.version),
+        exportedIso,
+      ];
+      csvLines.push(rowCells.join(','));
     }
     const plainCsv = csvLines.join('\n');
     const encryptedPayload = this.encryptionService.encrypt(plainCsv);
@@ -132,14 +134,12 @@ export class TargetBatchExportService {
       remoteFileName,
       encryptedContent: encryptedPayload,
     });
-
     const batchRecord = await this.targetBatchRepo.createBatchRecord({
       segment: criteria.segment,
       filePath: localFilePath,
       rowCount: exportedMemberIds.length,
       sentAt: sftpResult.uploadedAt,
     });
-
     await this.auditRepo.recordAudit({
       actor: criteria.actor ?? 'system:target-batch-exporter',
       action: 'TARGET_BATCH_EXPORTED',
@@ -153,7 +153,6 @@ export class TargetBatchExportService {
         sftpHost: sftpResult.host,
       },
     });
-
     return {
       batchId: batchRecord.batchId,
       segment: criteria.segment,
@@ -174,13 +173,10 @@ export class TargetBatchExportService {
 
     for (const row of rows) {
       const eventTime = (row.revokedAt ?? row.grantedAt ?? new Date(0)).getTime();
+      const isGranted = row.grantedAt !== null && row.revokedAt === null;
       const prev = latestByMember.get(row.memberId);
-      if (!prev || eventTime >= prev.ts) {
-        latestByMember.set(row.memberId, {
-          granted: row.grantedAt !== null && row.revokedAt === null,
-          version: row.version,
-          ts: eventTime,
-        });
+      if (!prev || eventTime > prev.ts || (eventTime === prev.ts && !isGranted)) {
+        latestByMember.set(row.memberId, { granted: isGranted, version: row.version, ts: eventTime });
       }
     }
 
