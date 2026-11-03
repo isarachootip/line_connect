@@ -1,7 +1,7 @@
-// ตั้งค่า Jest สำหรับรัน Unit Test ในระบบ LIFF Frontend
+// ตั้งค่า Jest สำหรับรัน Unit & Component Test ในระบบ LIFF Frontend
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/*.spec.ts'],
+  testMatch: ['**/*.spec.ts', '**/*.spec.tsx'],
 };

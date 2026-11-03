@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrandCode } from '@line-connect/shared';
 import { SignInRegisterView } from './components/SignInRegisterView';
 import { The1OtpVerifyView } from './components/The1OtpVerifyView';
-import { WelcomeCouponModal } from './components/WelcomeCouponModal';
+import { MemberPortalShell } from './components/portal/MemberPortalShell';
 import { getBrandThemeConfig, resolveBrandFromQuery } from './config/liff-brand.config';
 import { LiffLocale, mapRegistrationErrorMessage } from './i18n/liff-i18n';
 import { LiffAuthApiService, LiffRegistrationFlowError } from './services/liff-auth.service';
@@ -162,12 +162,17 @@ export function App(): React.ReactElement {
       ) : null}
 
       {step === 'HOME' ? (
-        <WelcomeCouponModal
+        <MemberPortalShell
           theme={brandTheme}
           locale={locale}
           memberId={memberId || 'T1_MEM_001'}
           showWelcomeCouponPopup={showCouponModal}
-          onClosePopup={() => setShowCouponModal(false)}
+          onCloseWelcomePopup={() => setShowCouponModal(false)}
+          onUnlinked={() => {
+            setMemberId('');
+            setShowCouponModal(false);
+            setStep('SIGN_IN_REGISTER');
+          }}
         />
       ) : null}
     </main>
