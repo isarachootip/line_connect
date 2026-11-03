@@ -4,8 +4,9 @@
   "private": true,
   "description": "ระบบ Backend API Gateway/BFF และ Core Engine สำหรับ Line Connect (NestJS)",
   "scripts": {
+    "dev": "tsc -p tsconfig.json && node --env-file-if-exists=../../.env dist/main.js",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/main.js",
+    "start": "node --env-file-if-exists=../../.env dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "jest --config jest.config.cjs",
     "prisma:validate": "prisma validate",

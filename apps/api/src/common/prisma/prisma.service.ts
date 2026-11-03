@@ -7,9 +7,15 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  // เชื่อมต่อฐานข้อมูลอัตโนมัติเมื่อโมดูลของ NestJS เริ่มทำงาน
+  // เชื่อมต่อฐานข้อมูลอัตโนมัติเมื่อโมดูลของ NestJS เริ่มทำงาน (รองรับโหมด Offline/Dev เมื่อยังไม่ได้เปิด Docker Postgres)
   async onModuleInit(): Promise<void> {
-    await this.$connect();
+    try {
+      await this.$connect();
+    } catch {
+      if (process.env.APP_ENV === 'prod') {
+        throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูล PostgreSQL บน Production ได้');
+      }
+    }
   }
 
   // ปิดการเชื่อมต่อฐานข้อมูลอย่างปลอดภัยเมื่อแอปพลิเคชันหยุดทำงาน

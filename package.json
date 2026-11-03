@@ -8,6 +8,9 @@
     "apps/*"
   ],
   "scripts": {
+    "dev:api": "npm run dev --workspace=@line-connect/api",
+    "dev:liff": "npm run dev --workspace=@line-connect/liff",
+    "dev:admin": "npm run dev --workspace=@line-connect/admin",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint \"packages/*/src/**/*.ts\" \"apps/*/src/**/*.{ts,tsx}\"",
