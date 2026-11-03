@@ -92,6 +92,16 @@ export const envSchema = z.object({
   TWD_SPENDING_API_BASE_URL: z.string().url(),
   TWD_SPENDING_API_KEY: z.string().min(1),
   TWD_BATCH_EXPORT_DIR: z.string().min(1).default('./exports/batch'),
+  EARN_POINT_QUEUE_MAX_RETRIES: z.coerce.number().int().positive().default(3),
+  SFTP_USE_MOCK: z
+    .string()
+    .default('true')
+    .transform((val) => val.toLowerCase() === 'true'),
+  SFTP_HOST: z.string().min(1).default('sftp-mock.thaiwatsadu.com'),
+  SFTP_PORT: z.coerce.number().int().positive().default(22),
+  SFTP_USER: z.string().min(1).default('twd_batch_user'),
+  SFTP_KEY_PATH: z.string().min(1).default('./secrets/id_ed25519_twd_sftp'),
+  SFTP_REMOTE_DIR: z.string().min(1).default('/incoming/target-batches'),
 });
 
 export type AppEnvConfig = z.infer<typeof envSchema>;

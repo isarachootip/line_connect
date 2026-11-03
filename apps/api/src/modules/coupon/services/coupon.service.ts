@@ -11,6 +11,7 @@ import {
   Injectable,
   NotFoundException,
   OnModuleDestroy,
+  Optional,
 } from '@nestjs/common';
 import { CouponSource, CouponWalletStatus } from '@prisma/client';
 import {
@@ -21,6 +22,7 @@ import {
   MissionCompletedEvent,
 } from '../../../common/events/domain-event-bus';
 import { AuditLogRepository } from '../../audit/repositories/audit-log.repository';
+import { EarnPointQueueService } from '../../integration/earn-point/earn-point-queue.service';
 import { THE1_CLIENT_TOKEN, The1Client } from '../../integration/the1/the1.interface';
 import { CouponRepository, CouponWalletWithDetail } from '../repositories/coupon.repository';
 
@@ -39,6 +41,7 @@ export class CouponService implements OnModuleDestroy {
     @Inject(THE1_CLIENT_TOKEN) private readonly the1Client: The1Client,
     private readonly eventBus: DomainEventBus,
     private readonly auditRepo: AuditLogRepository,
+    @Optional() private readonly earnPointQueue?: EarnPointQueueService,
   ) {
     this.unsubscribers.push(
       this.eventBus.subscribe(MEMBER_REGISTERED_EVENT, (evt) => this.handleMemberRegistered(evt)),
@@ -92,13 +95,17 @@ export class CouponService implements OnModuleDestroy {
     const points = typeof reward.points === 'number' ? reward.points : 0;
     if ((reward.type === 'THE1_POINT' || points > 0) && points > 0) {
       const refId = `MISSION:${event.missionId}:${event.memberId}`;
-      await this.the1Client.earnPoint(event.memberId, points, refId);
-      await this.auditRepo.recordAudit({
-        actor: 'system:coupon-service',
-        action: 'MISSION_REWARD_POINTS_EARNED',
-        target: event.memberId,
-        metadata: { missionId: event.missionId, points, refId },
-      });
+      if (this.earnPointQueue) {
+        await this.earnPointQueue.enqueueEarnPoint({ missionId: event.missionId, memberId: event.memberId, points, refId });
+      } else {
+        await this.the1Client.earnPoint(event.memberId, points, refId);
+        await this.auditRepo.recordAudit({
+          actor: 'system:coupon-service',
+          action: 'MISSION_REWARD_POINTS_EARNED',
+          target: event.memberId,
+          metadata: { missionId: event.missionId, points, refId },
+        });
+      }
     }
 
     const couponCode =
@@ -169,16 +176,7 @@ export class CouponService implements OnModuleDestroy {
         target: walletItem.id,
         metadata: { couponId: walletItem.couponId, code: walletItem.coupon.code },
       });
-
-      return {
-        walletId: walletItem.id,
-        couponId: walletItem.couponId,
-        code: walletItem.coupon.code,
-        status: SharedCouponWalletStatus.USED,
-        usedAt: now.toISOString(),
-        redemptionCode,
-        qrPayload,
-      };
+      return { walletId: walletItem.id, couponId: walletItem.couponId, code: walletItem.coupon.code, status: SharedCouponWalletStatus.USED, usedAt: now.toISOString(), redemptionCode, qrPayload };
     } finally {
       this.inFlightRedemptions.delete(lockKey);
     }

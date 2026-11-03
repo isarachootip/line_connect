@@ -67,6 +67,10 @@ describe('Environment Schema Validation (dev / staging / prod & The 1 Config)', 
     expect(prodConfig.TWD_SPENDING_MODE).toBe('BOTH');
     expect(prodConfig.TWD_SPENDING_AUTH_MODE).toBe('HMAC');
     expect(prodConfig.TWD_SPENDING_PULL_INTERVAL_MINUTES).toBe(15);
+    expect(prodConfig.SFTP_HOST).toBe('sftp-mock.thaiwatsadu.com');
+    expect(prodConfig.SFTP_USER).toBe('twd_batch_user');
+    expect(prodConfig.SFTP_KEY_PATH).toBe('./secrets/id_ed25519_twd_sftp');
+    expect(prodConfig.EARN_POINT_QUEUE_MAX_RETRIES).toBe(3);
   });
 
   it('ควรโยนข้อผิดพลาดเมื่อระบุ APP_ENV ที่ไม่อยู่ใน dev | staging | prod', () => {

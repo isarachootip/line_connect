@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
+import { IntegrationModule } from '../integration/integration.module';
 import { The1Module } from '../integration/the1/the1.module';
 import { CouponController } from './coupon.controller';
 import {
@@ -13,7 +14,7 @@ import { CouponService } from './services/coupon.service';
 
 // โมดูล Coupon สำหรับจัดการคูปองส่วนลด กระเป๋าคูปอง คูปองลงทะเบียนครั้งแรก และงานเปลี่ยนสถานะคูปองหมดอายุ
 @Module({
-  imports: [AuditModule, The1Module, forwardRef(() => AuthModule)],
+  imports: [AuditModule, The1Module, IntegrationModule, forwardRef(() => AuthModule)],
   controllers: [CouponController],
   providers: [
     CouponRepository,
