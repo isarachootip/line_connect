@@ -11,7 +11,9 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint \"packages/*/src/**/*.ts\" \"apps/*/src/**/*.{ts,tsx}\"",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "jest --config apps/api/jest.config.cjs apps/api/src/modules/member/e2e-full-journey.spec.ts",
+    "test:load": "k6 run tests/load/k6-auth-and-home.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",

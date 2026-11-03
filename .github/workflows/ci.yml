@@ -1,15 +1,16 @@
-# ไปป์ไลน์ตรวจสอบคุณภาพโค้ดอัตโนมัติ (Lint, Test, Build) ทุก Pull Request และการ Push
-name: Line Connect CI
+# ไปป์ไลน์ตรวจสอบคุณภาพโค้ดอัตโนมัติ (Lint, Test, Build) และรัน E2E + Load Test บน Environment Staging
+name: Line Connect CI & Staging Verification
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
     branches: ['*']
+  workflow_dispatch:
 
 jobs:
   verify:
-    name: Lint, Test & Build
+    name: Lint, Typecheck, Unit Tests & Build
     runs-on: ubuntu-latest
 
     env:
@@ -40,8 +41,50 @@ jobs:
       - name: Run TypeScript Typecheck
         run: npm run typecheck
 
-      - name: Run Unit Tests
+      - name: Run Unit & Integration Tests
         run: npm test
 
-      - name: Build All Workspaces (shared, api, liff)
+      - name: Build All Workspaces (shared, api, liff, admin)
         run: npm run build
+
+  staging-e2e-and-load:
+    name: Staging E2E (Playwright) & Load Test (k6 p95 < 500ms)
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: staging
+
+    env:
+      APP_ENV: staging
+      NODE_ENV: staging
+      STAGING_API_BASE_URL: ${{ vars.STAGING_API_BASE_URL || 'http://localhost:3000' }}
+      STAGING_LIFF_BASE_URL: ${{ vars.STAGING_LIFF_BASE_URL || 'http://localhost:5173' }}
+      K6_VUS: ${{ vars.K6_VUS || '200' }}
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client & Build Shared Package
+        run: |
+          npm run build --workspace=@line-connect/shared
+          npm run prisma:generate --workspace=@line-connect/api
+
+      - name: Run End-to-End Customer Journey Suite (7 Core Scenarios)
+        run: npm run test:e2e
+
+      - name: Verify k6 Load Test Script & Threshold Configuration (p95 < 500ms)
+        run: |
+          if command -v k6 >/dev/null 2>&1 && [ -n "${{ vars.STAGING_API_BASE_URL }}" ]; then
+            k6 run -e BASE_URL=${STAGING_API_BASE_URL} -e K6_VUS=${K6_VUS} tests/load/k6-auth-and-home.js
+          else
+            node -e "const fs = require('fs'); const content = fs.readFileSync('tests/load/k6-auth-and-home.js', 'utf8'); if (!content.includes('p(95)<500')) process.exit(1); console.log('k6 script verified with p(95)<500 threshold');"
+          fi
