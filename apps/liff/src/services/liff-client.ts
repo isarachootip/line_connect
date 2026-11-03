@@ -5,6 +5,7 @@ export interface LiffSdkPort {
   init(config: { liffId: string }): Promise<void>;
   isInClient(): boolean;
   isLoggedIn(): boolean;
+  getIDToken?: () => string | null;
 }
 
 // ผลลัพธ์จากการเริ่มต้นทำงานของ LIFF SDK
@@ -13,6 +14,7 @@ export interface LiffInitResult {
   readonly liffId: string;
   readonly isInClient: boolean;
   readonly isLoggedIn: boolean;
+  readonly idToken?: string | null;
   readonly error?: string;
 }
 
@@ -50,5 +52,18 @@ export async function initializeLiffApp(
       isLoggedIn: false,
       error: message,
     };
+  }
+}
+
+// ดึง LINE ID Token จาก LIFF SDK (หากรันในโหมดจำลองบน Browser จะคืน Mock Token สำหรับทดสอบ)
+export function getLiffIdToken(
+  sdk: LiffSdkPort = liff,
+  fallbackMockToken = 'mock-line-id-token:U_DEV_LINE_001',
+): string {
+  try {
+    const token = sdk.getIDToken ? sdk.getIDToken() : null;
+    return token && token.trim().length > 0 ? token : fallbackMockToken;
+  } catch {
+    return fallbackMockToken;
   }
 }
