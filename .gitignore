@@ -23,3 +23,9 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# ไฟล์ส่งออก Batch ชั่วคราวและโฟลเดอร์เก็บกุญแจ SFTP
+exports/
+apps/api/exports/
+secrets/
+
