@@ -1,0 +1,57 @@
+# กฎการแจ้งเตือน Prometheus Alertmanager สำหรับระบบ Line Connect (ไทวัสดุ และ BnB Home)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: line-connect-slo-alerts
+  namespace: line-connect-prod
+  labels:
+    app: line-connect-api
+    owner: it-division
+spec:
+  groups:
+    - name: line-connect.slo.rules
+      interval: 30s
+      rules:
+        # 1. แจ้งเตือนเมื่อ Error Rate เกิน 1% ต่อเนื่องเกิน 2 นาที
+        - alert: LineConnectHighErrorRate
+          expr: line_connect_error_rate_percent > 1
+          for: 2m
+          labels:
+            severity: critical
+            team: it-division
+          annotations:
+            summary: 'อัตรา Error Rate ของระบบ Line Connect สูงเกิน 1% ({{ $value }}%)'
+            description: 'ตรวจสอบพบ HTTP 5xx หรือข้อผิดพลาดในการเชื่อมต่อสูงเกินเกณฑ์ 1% กรุณาดู Runbook (docs/RUNBOOK.md)'
+
+        # 2. แจ้งเตือนเมื่อ Uptime ต่ำกว่า 99.5% ตามเกณฑ์ SLA
+        - alert: LineConnectLowUptimeSlaBreach
+          expr: line_connect_uptime_percent < 99.5
+          for: 1m
+          labels:
+            severity: critical
+            team: it-division
+          annotations:
+            summary: 'ค่า Uptime ของระบบ Line Connect ต่ำกว่าเกณฑ์ SLA 99.5% ({{ $value }}%)'
+            description: 'บริการหลักอาจไม่พร้อมใช้งาน กรุณาตรวจสอบสถานะ /health/ready และพิจารณา Rollback'
+
+        # 3. แจ้งเตือนเมื่อ Latency p95 เกิน 500 ms ต่อเนื่องเกิน 5 นาที
+        - alert: LineConnectHighLatencyP95
+          expr: line_connect_latency_p95_ms > 500
+          for: 5m
+          labels:
+            severity: warning
+            team: it-division
+          annotations:
+            summary: 'ความหน่วง (Latency p95) สูงเกิน 500 ms ({{ $value }} ms)'
+            description: 'ตรวจสอบโหลดของ Redis Cache และเวลาตอบสนองของ The 1 API'
+
+        # 4. แจ้งเตือนเมื่อคิวเติมแต้ม The 1 (Earn Point Queue) ค้างสะสมหรือล้มเหลว
+        - alert: LineConnectEarnPointQueueBacklog
+          expr: line_connect_earn_point_queue_pending > 100 or line_connect_earn_point_queue_failed > 0
+          for: 2m
+          labels:
+            severity: high
+            team: it-division
+          annotations:
+            summary: 'พบรายการค้างหรือล้มเหลวในคิวเติมแต้ม The 1 (Earn Point Queue)'
+            description: 'มีรายการรอคิว {{ $value }} รายการ กรุณาตรวจสอบสถานะระบบ The 1 API ตาม Runbook'

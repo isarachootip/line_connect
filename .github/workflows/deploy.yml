@@ -1,0 +1,91 @@
+# ไปป์ไลน์ Deploy อัตโนมัติขึ้น Staging เมื่อ Merge เข้า main, บังคับกดอนุมัติก่อนขึ้น Production และรองรับ Rollback ด้วยคำสั่งเดียว
+name: Line Connect CD (Staging Auto-Deploy & Production Manual Approval)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'เลือกคำสั่ง: deploy หรือ rollback'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - rollback
+      target_environment:
+        description: 'สภาพแวดล้อมปลายทางสำหรับ Rollback (staging | prod)'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+          - staging
+          - prod
+
+jobs:
+  build-and-push-image:
+    name: Build Multi-Stage Docker Image
+    if: ${{ github.event.inputs.action != 'rollback' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Build Production Container Image (Multi-Stage)
+        run: |
+          docker build -t ghcr.io/thaiwatsadu-it/line-connect-api:${{ github.sha }} .
+
+  deploy-staging:
+    name: Auto-Deploy to Staging
+    needs: build-and-push-image
+    if: ${{ github.event.inputs.action != 'rollback' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging-api.lineconnect.thaiwatsadu.com
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Apply Kubernetes Manifest to Staging Namespace
+        run: |
+          echo "Deploying ghcr.io/thaiwatsadu-it/line-connect-api:${{ github.sha }} to line-connect-staging..."
+          if command -v kubectl >/dev/null 2>&1 && [ -n "${{ secrets.KUBE_CONFIG_STAGING }}" ]; then
+            kubectl set image deployment/line-connect-api api=ghcr.io/thaiwatsadu-it/line-connect-api:${{ github.sha }} -n line-connect-staging
+            kubectl rollout status deployment/line-connect-api -n line-connect-staging --timeout=120s
+          fi
+
+  deploy-production:
+    name: Deploy to Production (Requires Manual Approval)
+    needs: deploy-staging
+    if: ${{ github.event.inputs.action != 'rollback' }}
+    runs-on: ubuntu-latest
+    # ผูกกับ GitHub Environment "production" ที่ตั้งค่า Required Reviewers เพื่อบังคับกดอนุมัติก่อนรันเสมอ
+    environment:
+      name: production
+      url: https://api.lineconnect.thaiwatsadu.com
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Production Cluster
+        run: |
+          echo "Approved! Deploying ghcr.io/thaiwatsadu-it/line-connect-api:${{ github.sha }} to line-connect-prod..."
+          if command -v kubectl >/dev/null 2>&1 && [ -n "${{ secrets.KUBE_CONFIG_PROD }}" ]; then
+            kubectl apply -f deploy/k8s/line-connect-deployment.yaml
+            kubectl set image deployment/line-connect-api api=ghcr.io/thaiwatsadu-it/line-connect-api:${{ github.sha }} -n line-connect-prod
+            kubectl rollout status deployment/line-connect-api -n line-connect-prod --timeout=180s
+          fi
+
+  one-command-rollback:
+    name: One-Command Rollback
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'rollback' }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target_environment == 'prod' && 'production' || 'staging' }}
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Execute Single-Command Rollback
+        run: sh deploy/scripts/rollback.sh ${{ github.event.inputs.target_environment }}

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
+import { MonitoringController } from './common/monitoring/monitoring.controller';
+import { MonitoringService } from './common/monitoring/monitoring.service';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { CryptoModule } from './common/crypto/crypto.module';
 import { EventsModule } from './common/events/events.module';
@@ -30,7 +32,7 @@ import { AuditModule } from './modules/audit/audit.module';
     AdminModule,
     AuditModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, MonitoringController],
   providers: [
     {
       provide: RedisService,
@@ -42,11 +44,12 @@ import { AuditModule } from './modules/audit/audit.module';
         ),
     },
     HealthService,
+    MonitoringService,
     {
       provide: StructuredJsonLogger,
       useFactory: () => new StructuredJsonLogger(),
     },
   ],
-  exports: [RedisService, StructuredJsonLogger],
+  exports: [RedisService, StructuredJsonLogger, MonitoringService],
 })
 export class AppModule {}
