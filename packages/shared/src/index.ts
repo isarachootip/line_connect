@@ -45,3 +45,13 @@ export {
   type UseCouponResponseDto,
 } from './types/coupon.type';
 
+export {
+  AdminRole,
+  type AdminUserDto,
+  type AdminSsoLoginResponseDto,
+  type AdminMissionSummaryDto,
+  type AdminCouponSummaryDto,
+  type AdminMemberSearchResultDto,
+} from './types/admin.type';
+
+

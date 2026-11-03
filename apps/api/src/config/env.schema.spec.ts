@@ -71,6 +71,8 @@ describe('Environment Schema Validation (dev / staging / prod & The 1 Config)', 
     expect(prodConfig.SFTP_USER).toBe('twd_batch_user');
     expect(prodConfig.SFTP_KEY_PATH).toBe('./secrets/id_ed25519_twd_sftp');
     expect(prodConfig.EARN_POINT_QUEUE_MAX_RETRIES).toBe(3);
+    expect(prodConfig.ADMIN_SSO_USE_MOCK).toBe(true);
+    expect(prodConfig.ADMIN_SSO_CLIENT_ID).toBe('default_admin_sso_client_id');
   });
 
   it('ควรโยนข้อผิดพลาดเมื่อระบุ APP_ENV ที่ไม่อยู่ใน dev | staging | prod', () => {

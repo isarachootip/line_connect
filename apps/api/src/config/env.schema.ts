@@ -102,6 +102,15 @@ export const envSchema = z.object({
   SFTP_USER: z.string().min(1).default('twd_batch_user'),
   SFTP_KEY_PATH: z.string().min(1).default('./secrets/id_ed25519_twd_sftp'),
   SFTP_REMOTE_DIR: z.string().min(1).default('/incoming/target-batches'),
+  ADMIN_SSO_USE_MOCK: z
+    .string()
+    .default('true')
+    .transform((val) => val.toLowerCase() === 'true'),
+  ADMIN_SSO_ISSUER_URL: z
+    .string()
+    .url()
+    .default('https://login.microsoftonline.com/common/v2.0'),
+  ADMIN_SSO_CLIENT_ID: z.string().min(1).default('default_admin_sso_client_id'),
 });
 
 export type AppEnvConfig = z.infer<typeof envSchema>;
