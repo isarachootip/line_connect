@@ -1,0 +1,116 @@
+# ไฟล์ Docker Compose สำหรับ Deploy บน Coolify โดยเฉพาะ (ไม่ผูก Host Port ชนกัน ให้ Traefik/Caddy ของ Coolify จัดการ Domain อัตโนมัติ)
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lineconnect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lineconnect_dev_pwd}
+      POSTGRES_DB: ${POSTGRES_DB:-line_connect_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER:-lineconnect} -d $${POSTGRES_DB:-line_connect_db}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SERVICE_FQDN_API_3000: ${SERVICE_FQDN_API:-}
+      APP_ENV: ${APP_ENV:-staging}
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-lineconnect}:${POSTGRES_PASSWORD:-lineconnect_dev_pwd}@postgres:5432/${POSTGRES_DB:-line_connect_db}?schema=public}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      PII_ENCRYPTION_KEY: ${PII_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      PII_BLIND_INDEX_SECRET: ${PII_BLIND_INDEX_SECRET:-replace_with_strong_hmac_secret_at_least_32_chars_long}
+      JWT_SECRET: ${JWT_SECRET:-replace_with_strong_jwt_secret_at_least_32_chars_long}
+      LINE_CHANNEL_ID: ${LINE_CHANNEL_ID:-your_line_channel_id}
+      LINE_LIFF_CHANNEL_ID_TWD: ${LINE_LIFF_CHANNEL_ID_TWD:-your_twd_liff_channel_id}
+      LINE_LIFF_CHANNEL_ID_BNB: ${LINE_LIFF_CHANNEL_ID_BNB:-your_bnb_liff_channel_id}
+      LINE_VERIFY_MOCK: ${LINE_VERIFY_MOCK:-true}
+      THE1_MOCK: ${THE1_MOCK:-true}
+      THE1_BASE_URL: ${THE1_BASE_URL:-https://api-mock.the1.co.th}
+      THE1_CLIENT_ID: ${THE1_CLIENT_ID:-your_the1_client_id}
+      THE1_CLIENT_SECRET: ${THE1_CLIENT_SECRET:-your_the1_client_secret}
+      TWD_SPENDING_API_USE_MOCK: ${TWD_SPENDING_API_USE_MOCK:-true}
+      TWD_SPENDING_API_BASE_URL: ${TWD_SPENDING_API_BASE_URL:-https://api-mock.thaiwatsadu.com}
+      TWD_SPENDING_API_KEY: ${TWD_SPENDING_API_KEY:-your_twd_spending_api_key}
+      SFTP_USE_MOCK: ${SFTP_USE_MOCK:-true}
+      ADMIN_SSO_USE_MOCK: ${ADMIN_SSO_USE_MOCK:-true}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://liff.line.me,http://localhost:5173,http://localhost:5174}
+    expose:
+      - '3000'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/health/live || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  liff:
+    build:
+      context: .
+      dockerfile: apps/liff/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
+        VITE_LIFF_ID: ${VITE_LIFF_ID:-1234567890-AbCdEfGh}
+        VITE_TNC_URL: ${VITE_TNC_URL:-https://www.thaiwatsadu.com/th/terms-and-conditions}
+        VITE_PDPA_URL: ${VITE_PDPA_URL:-https://www.thaiwatsadu.com/th/privacy-policy}
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      SERVICE_FQDN_LIFF_80: ${SERVICE_FQDN_LIFF:-}
+    expose:
+      - '80'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:80/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      SERVICE_FQDN_ADMIN_80: ${SERVICE_FQDN_ADMIN:-}
+    expose:
+      - '80'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:80/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:

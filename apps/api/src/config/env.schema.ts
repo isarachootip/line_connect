@@ -16,7 +16,8 @@ export const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_URL: z
     .string()
-    .min(1, 'ต้องระบุ DATABASE_URL สำหรับเชื่อมต่อ PostgreSQL'),
+    .min(1, 'ต้องระบุ DATABASE_URL สำหรับเชื่อมต่อ PostgreSQL')
+    .default('postgresql://lineconnect:lineconnect_dev_pwd@localhost:5432/line_connect_db?schema=public'),
   REDIS_HOST: z.string().min(1).default('localhost'),
   REDIS_PORT: z.coerce.number().int().positive().default(6379),
   REDIS_PASSWORD: z.string().optional().default(''),
@@ -30,13 +31,16 @@ export const envSchema = z.object({
     .regex(
       /^[0-9a-fA-F]{64}$/,
       'PII_ENCRYPTION_KEY ต้องเป็นรหัสฐานสิบหกความยาว 64 ตัวอักษร (32 ไบต์สำหรับ AES-256-GCM)',
-    ),
+    )
+    .default('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'),
   PII_BLIND_INDEX_SECRET: z
     .string()
-    .min(32, 'PII_BLIND_INDEX_SECRET ต้องมีความยาวอย่างน้อย 32 ตัวอักษร'),
+    .min(32, 'PII_BLIND_INDEX_SECRET ต้องมีความยาวอย่างน้อย 32 ตัวอักษร')
+    .default('replace_with_strong_hmac_secret_at_least_32_chars_long'),
   JWT_SECRET: z
     .string()
-    .min(32, 'JWT_SECRET ต้องมีความยาวอย่างน้อย 32 ตัวอักษร'),
+    .min(32, 'JWT_SECRET ต้องมีความยาวอย่างน้อย 32 ตัวอักษร')
+    .default('replace_with_strong_jwt_secret_at_least_32_chars_long'),
   JWT_ACCESS_EXPIRES_SECONDS: z.coerce.number().int().positive().default(900),
   JWT_REFRESH_EXPIRES_SECONDS: z.coerce
     .number()
@@ -44,8 +48,8 @@ export const envSchema = z.object({
     .positive()
     .default(604800),
   LINE_CHANNEL_ID: z.string().min(1).default('default_line_channel_id'),
-  LINE_LIFF_CHANNEL_ID_TWD: z.string().min(1),
-  LINE_LIFF_CHANNEL_ID_BNB: z.string().min(1),
+  LINE_LIFF_CHANNEL_ID_TWD: z.string().min(1).default('default_twd_liff_channel_id'),
+  LINE_LIFF_CHANNEL_ID_BNB: z.string().min(1).default('default_bnb_liff_channel_id'),
   LINE_VERIFY_MOCK: z
     .string()
     .default('true')
@@ -69,9 +73,15 @@ export const envSchema = z.object({
     .string()
     .default('true')
     .transform((val) => val.toLowerCase() === 'true'),
-  THE1_BASE_URL: z.string().url('ต้องระบุ THE1_BASE_URL เป็น URL ที่ถูกต้อง'),
-  THE1_CLIENT_ID: z.string().min(1, 'ต้องระบุ THE1_CLIENT_ID'),
-  THE1_CLIENT_SECRET: z.string().min(1, 'ต้องระบุ THE1_CLIENT_SECRET'),
+  THE1_BASE_URL: z
+    .string()
+    .url('ต้องระบุ THE1_BASE_URL เป็น URL ที่ถูกต้อง')
+    .default('https://api-mock.the1.co.th'),
+  THE1_CLIENT_ID: z.string().min(1, 'ต้องระบุ THE1_CLIENT_ID').default('default_the1_client_id'),
+  THE1_CLIENT_SECRET: z
+    .string()
+    .min(1, 'ต้องระบุ THE1_CLIENT_SECRET')
+    .default('default_the1_client_secret'),
   THE1_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),
   TWD_SPENDING_MODE: z.enum(['PUSH', 'PULL', 'BOTH']).default('BOTH'),
   TWD_SPENDING_AUTH_MODE: z.enum(['HMAC', 'MTLS']).default('HMAC'),
@@ -89,8 +99,11 @@ export const envSchema = z.object({
     .string()
     .default('true')
     .transform((val) => val.toLowerCase() === 'true'),
-  TWD_SPENDING_API_BASE_URL: z.string().url(),
-  TWD_SPENDING_API_KEY: z.string().min(1),
+  TWD_SPENDING_API_BASE_URL: z
+    .string()
+    .url()
+    .default('https://api-mock.thaiwatsadu.com'),
+  TWD_SPENDING_API_KEY: z.string().min(1).default('default_twd_spending_api_key'),
   TWD_BATCH_EXPORT_DIR: z.string().min(1).default('./exports/batch'),
   EARN_POINT_QUEUE_MAX_RETRIES: z.coerce.number().int().positive().default(3),
   SFTP_USE_MOCK: z
